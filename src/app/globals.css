@@ -1,26 +1,216 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@custom-variant dark (&:is(.dark *));
+
+/* =====================================================================
+ * 滝原塾 コンシェルジュ・プラットフォーム — Design System
+ * ---------------------------------------------------------------------
+ * Philosophy: Minimalist Luxury. 装飾ではなく、余白・質感・階調で
+ * 「信頼」と「知性」を伝える。原色は使わず、Deep Navy × Slate ×
+ * Champagne Gold の三色構成に絞る。
+ *
+ * Palette usage rules:
+ *  - navy-950/900  : ページ背景、サイドバーの最深部（水面下のような静けさ）
+ *  - navy-800/700  : カード・パネルの地（背景よりわずかに明るい一段上の面）
+ *  - navy-600/500  : ホバー面、入力欄、強めの罫線
+ *  - slate-*       : 補助テキスト、非アクティブなアイコン
+ *  - ivory-*       : 本文・見出しの文字色（純白は使わない = 温かみを残す）
+ *  - gold-*        : CTA・アクティブ状態・重要指標のハイライトのみに限定使用
+ *                    （多用すると安っぽくなるため、1画面の主張点は1〜2箇所まで）
+ *  - sage / rust / crimson : 状態色。彩度を落とし、原色を避ける
+ *                    （sage=良好・順調、rust=要観察、crimson=要対応のみ）
+ * ===================================================================== */
+@theme {
+  /* --- Raw palette -------------------------------------------------- */
+  --color-navy-950: #05070d;
+  --color-navy-900: #0a0e1a;
+  --color-navy-800: #0f1524;
+  --color-navy-700: #131b30;
+  --color-navy-600: #1a2440;
+  --color-navy-500: #263257;
+  --color-navy-400: #3c4a75;
+
+  --color-slate-500: #626e88;
+  --color-slate-400: #7c88a3;
+  --color-slate-300: #9aa6bc;
+  --color-slate-200: #c2cadb;
+
+  --color-ivory-300: #d8d3c6;
+  --color-ivory-200: #ede9df;
+  --color-ivory-100: #f6f4ee;
+
+  --color-gold-600: #a8853f;
+  --color-gold-500: #c4a05c;
+  --color-gold-400: #d9bd85;
+  --color-gold-300: #e8d4a8;
+
+  --color-sage-500: #7fa087;
+  --color-rust-500: #be7355;
+  --color-crimson-500: #b25454;
+
+  /* --- Typography ----------------------------------------------------
+   * Inter（欧文・数字）+ Noto Sans JP（和文）の混植。
+   * Inter が持たないグリフ（漢字・かな）は自動的に Noto Sans JP へ
+   * フォールバックするため、和欧混在でも字面の高さが揃う。
+   * ------------------------------------------------------------------ */
+  --font-sans: var(--font-inter), var(--font-noto-jp), "Hiragino Sans",
+    "Yu Gothic", sans-serif;
+
+  /* Type scale — 用途ごとに固定。任意サイズの乱用を避ける */
+  --text-display: 2.75rem; /* ログイン画面の主見出し等、1画面1回まで */
+  --text-display--line-height: 1.15;
+  --text-display--letter-spacing: -0.02em;
+  --text-display--font-weight: 600;
+
+  --text-h1: 1.75rem; /* ページタイトル */
+  --text-h1--line-height: 1.25;
+  --text-h1--letter-spacing: -0.01em;
+  --text-h1--font-weight: 600;
+
+  --text-h2: 1.25rem; /* セクション見出し */
+  --text-h2--line-height: 1.35;
+  --text-h2--letter-spacing: -0.01em;
+  --text-h2--font-weight: 600;
+
+  --text-h3: 1.0625rem; /* カード見出し */
+  --text-h3--line-height: 1.4;
+  --text-h3--font-weight: 600;
+
+  --text-body: 0.9375rem; /* 本文 */
+  --text-body--line-height: 1.75;
+  --text-body--font-weight: 400;
+
+  --text-body-sm: 0.8125rem; /* 補足本文 */
+  --text-body-sm--line-height: 1.6;
+  --text-body-sm--font-weight: 400;
+
+  --text-caption: 0.75rem; /* メタ情報・日付・件数 */
+  --text-caption--line-height: 1.5;
+  --text-caption--font-weight: 500;
+
+  --text-eyebrow: 0.6875rem; /* 大文字ラベル。uppercase と併用 */
+  --text-eyebrow--line-height: 1;
+  --text-eyebrow--font-weight: 600;
+  --text-eyebrow--letter-spacing: 0.16em;
+
+  /* --- Motion & elevation ---------------------------------------------
+   * 重厚感 = 速すぎない・急すぎない。duration は 300〜500ms を基本とし、
+   * easing は expo-out 系（--ease-luxury）に統一する。
+   * ------------------------------------------------------------------ */
+  --ease-luxury: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --shadow-panel: 0 1px 0 0 rgba(255, 255, 255, 0.04) inset,
+    0 20px 60px -24px rgba(0, 0, 0, 0.65);
+  --shadow-panel-lg: 0 1px 0 0 rgba(255, 255, 255, 0.05) inset,
+    0 40px 100px -32px rgba(0, 0, 0, 0.7);
+  --shadow-gold-glow: 0 0 0 1px rgba(196, 160, 92, 0.4),
+    0 8px 30px -8px rgba(196, 160, 92, 0.35);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  /* 角丸は控えめに。丸すぎるとカジュアルに見えるため base を 0.85rem に固定 */
+  --radius-sm: calc(var(--radius) * 0.55);
+  --radius-md: calc(var(--radius) * 0.75);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.3);
+  --radius-2xl: calc(var(--radius) * 1.7);
+  --radius-3xl: calc(var(--radius) * 2.1);
+  --radius-4xl: calc(var(--radius) * 2.5);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ---------------------------------------------------------------------
+ * Signature theme — 単一のブランド世界観として固定し、システムの
+ * ライト/ダーク設定には依存させない（高級ブランドは配色を選ばせない）。
+ * ------------------------------------------------------------------- */
+:root {
+  --background: var(--color-navy-900);
+  --foreground: var(--color-ivory-100);
+  --card: var(--color-navy-700);
+  --card-foreground: var(--color-ivory-100);
+  --popover: var(--color-navy-700);
+  --popover-foreground: var(--color-ivory-100);
+  --primary: var(--color-gold-500);
+  --primary-foreground: var(--color-navy-950);
+  --secondary: var(--color-navy-600);
+  --secondary-foreground: var(--color-ivory-100);
+  --muted: var(--color-navy-800);
+  --muted-foreground: var(--color-slate-400);
+  --accent: var(--color-navy-600);
+  --accent-foreground: var(--color-gold-400);
+  --destructive: var(--color-crimson-500);
+  --border: rgba(255, 255, 255, 0.08);
+  --input: var(--color-navy-600);
+  --ring: var(--color-gold-500);
+  --chart-1: var(--color-gold-500);
+  --chart-2: var(--color-sage-500);
+  --chart-3: var(--color-rust-500);
+  --chart-4: var(--color-slate-300);
+  --chart-5: var(--color-navy-400);
+  --radius: 0.85rem;
+  --sidebar: var(--color-navy-950);
+  --sidebar-foreground: var(--color-ivory-200);
+  --sidebar-primary: var(--color-gold-500);
+  --sidebar-primary-foreground: var(--color-navy-950);
+  --sidebar-accent: var(--color-navy-800);
+  --sidebar-accent-foreground: var(--color-ivory-100);
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --sidebar-ring: var(--color-gold-500);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+/* ---------------------------------------------------------------------
+ * Component rules（コンポーネントのルール）
+ *  - パネル/カードは常に shadow-panel + border + bg-card を基本とする
+ *  - ゴールドは「主要CTA」「アクティブなタブ/ナビ」「重要指標の数値」の
+ *    3用途にのみ使う。バッジや罫線での多用は禁止
+ *  - ラベルは text-eyebrow + uppercase + tracking-[0.16em] を必ず併用する
+ *  - 生徒の状態色は sage(順調) / rust(要観察) / crimson(要対応) の
+ *    3段階に固定し、それ以外の色を状態表現に使わない
+ *  - transition は duration-300〜500 + ease-luxury を既定とする
+ * ------------------------------------------------------------------- */

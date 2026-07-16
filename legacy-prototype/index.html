@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>医学部教科質問AI</title>
+    <link rel="stylesheet" href="assets/styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="管理">
+        <div class="brand-block">
+          <p class="eyebrow">医学部教科質問AI</p>
+          <h1>質問を弱点データに変える</h1>
+        </div>
+
+        <section class="panel compact-panel" aria-label="生徒">
+          <div class="panel-heading">
+            <span>生徒</span>
+          </div>
+          <label class="field-label" for="studentSelect">生徒ID</label>
+          <select id="studentSelect"></select>
+          <div class="inline-form">
+            <input id="newStudentInput" type="text" placeholder="新しい生徒名">
+            <button id="addStudentButton" class="button secondary" type="button">追加</button>
+          </div>
+        </section>
+
+        <section class="panel compact-panel" aria-label="分類">
+          <div class="panel-heading">
+            <span>分類</span>
+          </div>
+
+          <label class="field-label" for="subjectSelect">教科</label>
+          <select id="subjectSelect">
+            <option>数学</option>
+            <option>英語</option>
+            <option>化学</option>
+            <option>生物</option>
+            <option>物理</option>
+          </select>
+
+          <label class="field-label" for="unitInput">単元</label>
+          <input id="unitInput" type="text" list="unitSuggestions" placeholder="例: 確率、微積分、構文">
+          <datalist id="unitSuggestions"></datalist>
+
+          <label class="field-label" for="universityInput">大学名</label>
+          <input id="universityInput" type="text" list="universitySuggestions" placeholder="例: 久留米大学">
+          <datalist id="universitySuggestions">
+            <option value="久留米大学">
+            <option value="金沢医科大学">
+            <option value="福岡大学">
+            <option value="川崎医科大学">
+            <option value="兵庫医科大学">
+            <option value="岩手医科大学">
+          </datalist>
+
+          <div class="two-column">
+            <div>
+              <label class="field-label" for="yearInput">年度</label>
+              <input id="yearInput" type="text" placeholder="例: 2026">
+            </div>
+            <div>
+              <label class="field-label" for="difficultySelect">難度</label>
+              <select id="difficultySelect">
+                <option>基礎</option>
+                <option selected>標準</option>
+                <option>やや難</option>
+                <option>難</option>
+              </select>
+            </div>
+          </div>
+
+          <label class="field-label" for="formatSelect">問題形式</label>
+          <select id="formatSelect">
+            <option>普段の問題</option>
+            <option>過去問</option>
+            <option>予想問題</option>
+            <option>模試</option>
+            <option>教材</option>
+          </select>
+
+          <label class="field-label" for="inputTypeSelect">入力形式</label>
+          <select id="inputTypeSelect">
+            <option>テキスト</option>
+            <option>写真</option>
+            <option>PDF</option>
+          </select>
+        </section>
+
+        <section class="panel compact-panel" aria-label="操作">
+          <button id="saveRecordButton" class="button primary full" type="button">質問を保存</button>
+          <button id="buildPromptButton" class="button secondary full" type="button">AI用プロンプト作成</button>
+          <button id="newRecordButton" class="button secondary full" type="button">入力を空にする</button>
+          <button id="exportButton" class="button secondary full" type="button">記録を書き出す</button>
+        </section>
+      </aside>
+
+      <main class="main-panel">
+        <header class="top-bar">
+          <div>
+            <p class="eyebrow">教科質問・過去問・弱点分析</p>
+            <h2>医学部受験 教科質問ワークスペース</h2>
+          </div>
+          <div class="summary-strip" aria-label="集計">
+            <div>
+              <span id="totalCount">0</span>
+              <small>質問</small>
+            </div>
+            <div>
+              <span id="recentCount">0</span>
+              <small>直近14日</small>
+            </div>
+            <div>
+              <span id="teacherCheckCount">0</span>
+              <small>講師確認</small>
+            </div>
+          </div>
+        </header>
+
+        <section class="workspace-grid">
+          <article class="panel question-panel" aria-label="質問入力">
+            <div class="panel-heading">
+              <span>質問入力</span>
+              <span id="saveStatus" class="save-status">未保存</span>
+            </div>
+
+            <label class="field-label" for="questionInput">問題文・質問</label>
+            <textarea id="questionInput" rows="9" placeholder="問題文、途中式、分からない箇所を入力します。"></textarea>
+
+            <div class="file-row">
+              <label class="file-button" for="fileInput">ファイル選択</label>
+              <input id="fileInput" type="file" accept="image/*,.pdf" multiple>
+              <span id="fileStatus" class="file-status">未選択</span>
+            </div>
+
+            <label class="field-label" for="studentAttemptInput">生徒が考えたこと</label>
+            <textarea id="studentAttemptInput" rows="4" placeholder="どこまで解けたか、どこで止まったかを残します。"></textarea>
+
+            <div class="two-column">
+              <div>
+                <label class="field-label" for="answerStatusSelect">解答状況</label>
+                <select id="answerStatusSelect">
+                  <option>未着手</option>
+                  <option>途中まで解いた</option>
+                  <option>解いたが不正解</option>
+                  <option>解けたが不安</option>
+                  <option>復習完了</option>
+                </select>
+              </div>
+              <div>
+                <label class="field-label" for="confidenceSelect">確信度</label>
+                <select id="confidenceSelect">
+                  <option>低</option>
+                  <option selected>中</option>
+                  <option>高</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="check-row">
+              <input id="teacherCheckInput" type="checkbox">
+              <label for="teacherCheckInput">講師確認が必要</label>
+            </div>
+          </article>
+
+          <article class="panel tag-panel" aria-label="つまずき分類">
+            <div class="panel-heading">
+              <span>つまずき分類</span>
+              <button id="suggestTagsButton" class="button small secondary" type="button">候補</button>
+            </div>
+            <div id="stumbleTags" class="tag-list"></div>
+
+            <label class="field-label" for="weaknessInput">弱点タグ</label>
+            <input id="weaknessInput" type="text" placeholder="例: 確率-条件整理, 微積分-計算処理">
+
+            <label class="field-label" for="reviewInput">復習指示</label>
+            <textarea id="reviewInput" rows="5" placeholder="今日・3日後・週末の復習指示を残します。"></textarea>
+
+            <label class="field-label" for="similarInput">類題・練習問題メモ</label>
+            <textarea id="similarInput" rows="5" placeholder="AIが作る類題、または講師が指定する類題を残します。"></textarea>
+          </article>
+        </section>
+
+        <section class="tabs" aria-label="表示切替">
+          <button class="tab-button active" type="button" data-view="analysis">弱点分析</button>
+          <button class="tab-button" type="button" data-view="prompt">AI用プロンプト</button>
+          <button class="tab-button" type="button" data-view="history">質問履歴</button>
+        </section>
+
+        <section id="analysisView" class="view active" aria-label="弱点分析">
+          <div class="analysis-grid">
+            <article class="panel">
+              <div class="panel-heading">
+                <span>優先復習</span>
+              </div>
+              <div id="priorityList" class="priority-list"></div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-heading">
+                <span>つまずき傾向</span>
+              </div>
+              <div id="stumbleChart" class="bar-list"></div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-heading">
+                <span>教科別</span>
+              </div>
+              <div id="subjectChart" class="bar-list"></div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-heading">
+                <span>週次復習メニュー</span>
+              </div>
+              <div id="weeklyPlan" class="weekly-plan"></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="promptView" class="view" aria-label="AI用プロンプト">
+          <article class="panel">
+            <div class="panel-heading">
+              <span>AI用プロンプト</span>
+              <button id="copyPromptButton" class="button small secondary" type="button">コピー</button>
+            </div>
+            <textarea id="promptOutput" class="mono-output" rows="18"></textarea>
+          </article>
+
+          <article class="panel">
+            <div class="panel-heading">
+              <span>回答テンプレート</span>
+              <button id="buildDraftButton" class="button small secondary" type="button">作成</button>
+            </div>
+            <div id="draftOutput" class="draft-output"></div>
+          </article>
+        </section>
+
+        <section id="historyView" class="view" aria-label="質問履歴">
+          <article class="panel">
+            <div class="history-header">
+              <div>
+                <label class="field-label" for="historySearchInput">検索</label>
+                <input id="historySearchInput" type="search" placeholder="教科・単元・大学・タグ">
+              </div>
+              <div>
+                <label class="field-label" for="historySubjectFilter">教科</label>
+                <select id="historySubjectFilter">
+                  <option value="">すべて</option>
+                  <option>数学</option>
+                  <option>英語</option>
+                  <option>化学</option>
+                  <option>生物</option>
+                  <option>物理</option>
+                </select>
+              </div>
+            </div>
+            <div id="historyList" class="history-list"></div>
+          </article>
+        </section>
+      </main>
+    </div>
+
+    <script src="assets/app.js"></script>
+  </body>
+</html>
