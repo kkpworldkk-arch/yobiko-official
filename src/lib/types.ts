@@ -30,3 +30,18 @@ export interface Student {
   topStumbles: StumbleTag[];
   priorityAction: PriorityAction;
 }
+
+export interface TutorResponse {
+  summary: string;
+  steps: string[];
+  weaknessTag: string;
+  reviewSuggestion: string;
+}
+
+export interface QaHistoryEntry extends TutorResponse {
+  id: string;
+  subject: string;
+  unit: string;
+  question: string;
+  askedAt: string;
+}

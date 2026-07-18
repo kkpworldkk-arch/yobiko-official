@@ -18,7 +18,7 @@ export default function LoginPage() {
     event.preventDefault();
     setIsSubmitting(true);
     window.setTimeout(() => {
-      router.push("/dashboard");
+      router.push(role === "teacher" ? "/dashboard" : "/student");
     }, 500);
   }
 

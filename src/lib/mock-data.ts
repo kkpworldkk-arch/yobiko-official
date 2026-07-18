@@ -1,4 +1,4 @@
-import type { Student } from "@/lib/types";
+import type { QaHistoryEntry, Student } from "@/lib/types";
 
 export const students: Student[] = [
   {
@@ -146,6 +146,67 @@ export const teacher = {
   name: "滝原 一憲",
   role: "医学部専属コンシェルジュ",
 };
+
+// ログイン画面で「生徒・保護者」を選んだ場合に閲覧するデモ用の生徒アカウント
+export const demoStudent = students[0];
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+// DB初回起動時のシード用データ。askedAtはシード投入時点からの相対時刻で計算する。
+export const demoStudentQaHistory: QaHistoryEntry[] = [
+  {
+    id: "q-seed-1",
+    subject: "数学",
+    unit: "確率",
+    question: "サイコロを3回投げて出た目の積が偶数になる確率が求められません。",
+    askedAt: new Date(Date.now() - DAY_MS).toISOString(),
+    summary:
+      "「積が偶数になる確率」ですね。まずは余事象（積が奇数になる確率）を考えるところから整理しましょう。",
+    steps: [
+      "積が偶数になるのは「少なくとも1回偶数の目が出る」場合だと確認する",
+      "余事象「3回とも奇数の目が出る」確率を先に求める",
+      "1から余事象の確率を引いて答えを出す",
+      "分母・分子の約分を最後にもう一度確認する",
+    ],
+    weaknessTag: "確率-条件整理",
+    reviewSuggestion:
+      "余事象を使う類題を3問、48時間以内に解き直すことをおすすめします。",
+  },
+  {
+    id: "q-seed-2",
+    subject: "化学",
+    unit: "有機化学",
+    question: "構造決定の問題で、どの反応から手をつければいいか分かりません。",
+    askedAt: new Date(Date.now() - 3 * DAY_MS).toISOString(),
+    summary:
+      "構造決定は「与えられた実験事実を分類する」ところから始めると迷いにくくなります。",
+    steps: [
+      "分子式から不飽和度を計算し、環・二重結合の数を絞り込む",
+      "官能基特有の反応（酸化・還元・エステル化など)の実験事実を分類する",
+      "候補構造をいくつか書き出し、矛盾する実験事実を消去法で除外する",
+      "最終候補が全ての実験事実と整合するか見直す",
+    ],
+    weaknessTag: "有機-構造決定",
+    reviewSuggestion: "不飽和度の計算だけを繰り返す小テストを週末に行いましょう。",
+  },
+  {
+    id: "q-seed-3",
+    subject: "英語",
+    unit: "英作文",
+    question: "和文英訳で時制の使い分けがいつも不安になります。",
+    askedAt: new Date(Date.now() - 5 * DAY_MS).toISOString(),
+    summary:
+      "時制は「その動作が完了しているか、継続しているか」を日本語から先に判定すると安定します。",
+    steps: [
+      "和文の動作が「一回きり」か「継続・習慣」かを見極める",
+      "時間を表す語句（すでに、ずっと、今まで等)を手がかりに時制を仮決定する",
+      "主節と従属節の時制が対応しているか確認する",
+      "仮決定した時制で英文を組み立て、不自然さがないか読み返す",
+    ],
+    weaknessTag: "英作文-時制",
+    reviewSuggestion: "現在完了と過去形を対比させる英作文を5題、週内に添削に出しましょう。",
+  },
+];
 
 export const todaysNewQuestions = 8;
 export const todaysNewQuestionsDelta = "+3";
