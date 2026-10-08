@@ -1,5 +1,6 @@
 import { DatabaseSync } from "node:sqlite";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { createHash, randomBytes, randomUUID, scryptSync } from "node:crypto";
 import { demoStudent, demoStudentQaHistory, students } from "@/lib/mock-data";
@@ -36,12 +37,15 @@ import type {
 //
 // ただし `next build` 中(NEXT_PHASE=phase-production-build)は、Renderなどの
 // 永続ディスクがまだマウントされておらず、本来のDATA_DIR(例: /var/data)への
-// アクセスが失敗する。ビルド中はこのモジュールが読み込まれるだけでも
-// fs.mkdirSync が実行されてしまうため、ビルド中は常にプロジェクト直下の
-// 使い捨てディレクトリにフォールバックする(実データには影響しない)。
+// アクセスが失敗する。さらに、ビルドのページデータ収集は複数ワーカー
+// プロセスが並列にこのモジュールを読み込むため、同じ場所にフォールバック
+// すると各プロセスが同じSQLiteファイルを同時に開こうとして
+// "database is locked" で失敗する。そのためビルド中はプロセスごとに
+// 完全に独立した使い捨てディレクトリ(OSの一時フォルダ配下)を使う。
 const isProductionBuild = process.env.NEXT_PHASE === "phase-production-build";
-const DATA_DIR =
-  !isProductionBuild && process.env.DATA_DIR
+const DATA_DIR = isProductionBuild
+  ? path.join(os.tmpdir(), `takihara-build-${process.pid}`)
+  : process.env.DATA_DIR
     ? path.resolve(process.env.DATA_DIR)
     : path.join(process.cwd(), "data");
 fs.mkdirSync(DATA_DIR, { recursive: true });
