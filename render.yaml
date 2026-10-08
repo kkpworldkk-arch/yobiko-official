@@ -1,0 +1,37 @@
+# RenderのBlueprint定義。Renderダッシュボードで「New +」→「Blueprint」から
+# このリポジトリを選ぶと、この内容どおりにWebサービス(永続ディスク付き)が
+# 自動で作成される。
+#
+# 作成後、ダッシュボードの Environment タブで ANTHROPIC_API_KEY だけ手動入力する
+# 必要がある(sync: false の項目は秘密情報のためBlueprintに書けない)。
+# SESSION_SECRET は generateValue により自動で安全な値が生成される。
+
+services:
+  - type: web
+    name: takihara-app
+    runtime: node
+    plan: starter
+    region: singapore
+    branch: master
+    buildCommand: >-
+      npm ci &&
+      npm run build &&
+      cp -r public .next/standalone/ &&
+      mkdir -p .next/standalone/.next &&
+      cp -r .next/static .next/standalone/.next/
+    startCommand: node .next/standalone/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOSTNAME
+        value: 0.0.0.0
+      - key: DATA_DIR
+        value: /var/data
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+    disk:
+      name: takihara-data
+      mountPath: /var/data
+      sizeGB: 1

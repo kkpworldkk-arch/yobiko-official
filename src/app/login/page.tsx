@@ -1,26 +1,24 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useActionState, useState } from "react";
 import { Eye, EyeOff, Lock, Mail, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PasskeyButton } from "@/components/passkey-button";
+import { login, type LoginState } from "@/app/actions/auth";
+
+const initialState: LoginState = {};
 
 export default function LoginPage() {
-  const router = useRouter();
   const [role, setRole] = useState<"teacher" | "family">("teacher");
+  const [email, setEmail] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setIsSubmitting(true);
-    window.setTimeout(() => {
-      router.push(role === "teacher" ? "/dashboard" : "/student");
-    }, 500);
-  }
+  const [state, formAction, isSubmitting] = useActionState(
+    login,
+    initialState,
+  );
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-navy-950 px-6 py-12">
@@ -72,7 +70,15 @@ export default function LoginPage() {
             </TabsList>
           </Tabs>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <form action={formAction} className="flex flex-col gap-5">
+            <input type="hidden" name="role" value={role} />
+
+            {state.error && (
+              <p className="rounded-lg border border-crimson-500/25 bg-crimson-500/[0.06] px-3.5 py-2.5 text-body-sm text-crimson-400">
+                {state.error}
+              </p>
+            )}
+
             <div className="flex flex-col gap-2">
               <Label htmlFor="email" className="text-body-sm text-ivory-200">
                 メールアドレス
@@ -81,9 +87,12 @@ export default function LoginPage() {
                 <Mail className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                 <Input
                   id="email"
+                  name="email"
                   type="email"
                   required
                   autoComplete="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
                   placeholder="you@takihara-juku.jp"
                   className="h-11 pl-10"
                 />
@@ -109,6 +118,7 @@ export default function LoginPage() {
                 <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                 <Input
                   id="password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
                   required
                   autoComplete="current-password"
@@ -139,6 +149,7 @@ export default function LoginPage() {
             >
               {isSubmitting ? "確認しています…" : "ログイン"}
             </Button>
+            <PasskeyButton mode="login" email={email} />
           </form>
         </div>
 

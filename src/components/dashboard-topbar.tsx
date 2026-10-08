@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Bell, LogOut, Search, Settings } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -10,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { teacher, totalPendingChecks } from "@/lib/mock-data";
+import { logout } from "@/app/actions/auth";
 
 const today = new Date();
 const formattedDate = new Intl.DateTimeFormat("ja-JP", {
@@ -20,12 +19,18 @@ const formattedDate = new Intl.DateTimeFormat("ja-JP", {
   weekday: "short",
 }).format(today);
 
-export function DashboardTopbar() {
+export function DashboardTopbar({
+  totalPendingChecks,
+  teacherName,
+}: {
+  totalPendingChecks: number;
+  teacherName: string;
+}) {
   return (
-    <header className="flex items-center justify-between gap-6 border-b border-border px-8 py-5">
+    <header className="no-print flex items-center justify-between gap-6 border-b border-border px-8 py-5">
       <div>
         <h1 className="text-h1 text-ivory-100">
-          おかえりなさい、{teacher.name}先生
+          おかえりなさい、{teacherName}先生
         </h1>
         <p className="mt-1 text-caption text-slate-400">{formattedDate}</p>
       </div>
@@ -55,7 +60,7 @@ export function DashboardTopbar() {
           <DropdownMenuTrigger className="flex items-center gap-2 rounded-full outline-none">
             <Avatar className="size-10 border border-white/[0.06] transition-colors duration-300 hover:border-gold-500/30">
               <AvatarFallback className="bg-navy-600 text-body-sm text-gold-400">
-                松
+                {teacherName.slice(0, 1)}
               </AvatarFallback>
             </Avatar>
           </DropdownMenuTrigger>
@@ -65,7 +70,7 @@ export function DashboardTopbar() {
               設定
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem render={<Link href="/login" />}>
+            <DropdownMenuItem onClick={() => { void logout(); }}>
               <LogOut className="size-4" strokeWidth={1.75} />
               ログアウト
             </DropdownMenuItem>

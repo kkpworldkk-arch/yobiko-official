@@ -4,17 +4,36 @@ import { StatusBadge } from "@/components/status-badge";
 import { MagnitudeBarList } from "@/components/magnitude-bar-list";
 import { StudentCard } from "@/components/student-card";
 import {
-  priorityQueue,
-  students,
-  stumbleTotals,
-  subjectTotals,
-  todaysNewQuestions,
-  todaysNewQuestionsDelta,
-  totalPendingChecks,
-  totalQuestionsLast14Days,
-} from "@/lib/mock-data";
+  getLiveStumbleTotals,
+  getLiveSubjectTotals,
+  getLiveTodaysNewQuestions,
+  getLiveTotalPendingChecks,
+  getLiveTotalQuestionsLast14Days,
+  getRoster,
+} from "@/lib/roster";
+
+const HEALTH_RANK: Record<string, number> = { urgent: 0, watch: 1, good: 2 };
+
+// SQLiteから毎回最新の名簿を読むため、静的レンダリングのキャッシュを無効化する
+export const dynamic = "force-dynamic";
 
 export default function DashboardPage() {
+  const students = getRoster();
+  const totalPendingChecks = getLiveTotalPendingChecks();
+  const totalQuestionsLast14Days = getLiveTotalQuestionsLast14Days();
+  const { count: todaysNewQuestions, deltaLabel: todaysNewQuestionsDelta } =
+    getLiveTodaysNewQuestions();
+  const subjectTotals = getLiveSubjectTotals();
+  const stumbleTotals = getLiveStumbleTotals();
+  const priorityQueue = [...students]
+    .sort((a, b) => {
+      if (HEALTH_RANK[a.health] !== HEALTH_RANK[b.health]) {
+        return HEALTH_RANK[a.health] - HEALTH_RANK[b.health];
+      }
+      return b.pendingTeacherChecks - a.pendingTeacherChecks;
+    })
+    .slice(0, 4);
+
   return (
     <div className="flex flex-col gap-8">
       {/* KPI row */}
@@ -30,8 +49,8 @@ export default function DashboardPage() {
           icon={MessagesSquare}
           delta={{
             value: `${todaysNewQuestionsDelta}件 前日比`,
-            direction: "up",
-            isPositive: true,
+            direction: todaysNewQuestionsDelta.startsWith("-") ? "down" : "up",
+            isPositive: !todaysNewQuestionsDelta.startsWith("-"),
           }}
         />
         <StatTile

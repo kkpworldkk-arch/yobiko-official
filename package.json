@@ -2,8 +2,16 @@
   "name": "takihara-app",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "dev": "next dev",
+    "dev:open": "node scripts/dev-open.mjs",
+    "create-user": "node scripts/create-user.mjs",
+    "scan:books": "python scripts/scan-reference-books.py",
+    "ocr:reference-questions": "python scripts/ocr-reference-oral-questions.py",
+    "import:book-questions": "python scripts/import-reference-questions.py",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -11,6 +19,8 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.112.3",
     "@base-ui/react": "^1.6.0",
+    "@simplewebauthn/browser": "^14.0.0",
+    "@simplewebauthn/server": "^14.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.24.0",
@@ -29,6 +39,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "open": "^11.0.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

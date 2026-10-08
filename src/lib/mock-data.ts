@@ -1,144 +1,97 @@
 import type { QaHistoryEntry, Student } from "@/lib/types";
 
+export const SUBJECTS = ["数学", "英語", "化学", "生物", "物理"];
+export const UNIVERSITIES = [
+  "久留米大学",
+  "金沢医科大学",
+  "福岡大学",
+  "川崎医科大学",
+  "兵庫医科大学",
+  "岩手医科大学",
+  "北海道大学",
+  "東京女子医科大学",
+];
+
 export const students: Student[] = [
   {
-    id: "s-hoshino",
-    name: "星野 陽菜",
-    initials: "HH",
-    grade: "高3",
-    targetUniversity: "久留米大学",
+    id: "s-tanifuji",
+    name: "谷藤丈二",
+    email: "tanifuji_jyouji@icloud.com",
+    initials: "TJ",
+    grade: "既卒４年",
+    targetUniversity: "岩手医科大学",
     health: "urgent",
     pendingTeacherChecks: 3,
     questionsLast14Days: 21,
     totalQuestions: 214,
     lastActivity: "18分前",
-    subjectBreakdown: [
-      { subject: "数学", count: 9 },
-      { subject: "化学", count: 6 },
-      { subject: "英語", count: 4 },
-      { subject: "生物", count: 2 },
-    ],
-    topStumbles: [
-      { label: "確率-条件整理", count: 6 },
-      { label: "有機-構造決定", count: 4 },
-      { label: "英作文-時制", count: 2 },
-    ],
-    priorityAction: {
-      headline: "確率-条件整理が2週間停滞",
-      detail: "同系統の誤答が3回連続。明日の面談で解法の型から立て直す。",
-    },
+    subjectBreakdown: [{ subject: "数学", count: 9 }, { subject: "化学", count: 6 }, { subject: "英語", count: 4 }],
+    topStumbles: [{ label: "数学-典型解法", count: 6 }, { label: "化学-反応整理", count: 4 }],
+    priorityAction: { headline: "参考書の口頭試問を優先", detail: "重要事項の即答練習を進める。" },
   },
   {
-    id: "s-kitajima",
-    name: "北島 蓮",
-    initials: "KR",
-    grade: "既卒1年",
+    id: "s-yashita",
+    name: "谷下田博生",
+    email: "yahitaki324@icloud.com",
+    initials: "YH",
+    grade: "既卒３年",
     targetUniversity: "金沢医科大学",
     health: "watch",
     pendingTeacherChecks: 2,
     questionsLast14Days: 16,
     totalQuestions: 341,
     lastActivity: "1時間前",
-    subjectBreakdown: [
-      { subject: "英語", count: 7 },
-      { subject: "数学", count: 5 },
-      { subject: "物理", count: 3 },
-    ],
-    topStumbles: [
-      { label: "構文-関係詞", count: 5 },
-      { label: "力学-剛体", count: 3 },
-    ],
-    priorityAction: {
-      headline: "構文-関係詞の質問が急増",
-      detail: "先週比+4件。長文読解の土台を崩す前に個別テキストを配布したい。",
-    },
+    subjectBreakdown: [{ subject: "英語", count: 7 }, { subject: "数学", count: 5 }, { subject: "化学", count: 3 }],
+    topStumbles: [{ label: "英語-医療語彙", count: 5 }, { label: "数学-図形処理", count: 3 }],
+    priorityAction: { headline: "医療英単語の口頭確認を開始", detail: "短時間反復へ移行する。" },
   },
   {
-    id: "s-takamine",
-    name: "高峰 美咲",
-    initials: "TM",
-    grade: "高3",
-    targetUniversity: "兵庫医科大学",
+    id: "s-hirata",
+    name: "平田孝雄",
+    email: "takanori_hirata0511@icloud.com",
+    initials: "HT",
+    grade: "既卒２年",
+    targetUniversity: "北海道大学",
     health: "good",
     pendingTeacherChecks: 0,
     questionsLast14Days: 12,
     totalQuestions: 178,
     lastActivity: "3時間前",
-    subjectBreakdown: [
-      { subject: "生物", count: 6 },
-      { subject: "化学", count: 4 },
-      { subject: "数学", count: 2 },
-    ],
-    topStumbles: [{ label: "遺伝-計算処理", count: 3 }],
-    priorityAction: {
-      headline: "遺伝-計算処理は改善傾向",
-      detail: "直近3問連続で自力正解。応用問題へ難度を一段階引き上げる。",
-    },
+    subjectBreakdown: [{ subject: "生物", count: 6 }, { subject: "化学", count: 4 }, { subject: "数学", count: 2 }],
+    topStumbles: [{ label: "生物-重要語句", count: 3 }],
+    priorityAction: { headline: "生物基礎の問題化を待機", detail: "本文確認後、重要語句の口頭試問を追加する。" },
   },
   {
-    id: "s-endo",
-    name: "遠藤 大和",
-    initials: "ED",
-    grade: "高3",
-    targetUniversity: "福岡大学",
+    id: "s-suzuki",
+    name: "鈴木晴夏",
+    email: "haruka.mk67@i.softbank.jp",
+    initials: "SH",
+    grade: "既卒９年",
+    targetUniversity: "東京女子医科大学",
     health: "watch",
     pendingTeacherChecks: 1,
     questionsLast14Days: 9,
     totalQuestions: 96,
     lastActivity: "6時間前",
-    subjectBreakdown: [
-      { subject: "数学", count: 5 },
-      { subject: "英語", count: 3 },
-      { subject: "化学", count: 1 },
-    ],
-    topStumbles: [{ label: "微積分-計算処理", count: 4 }],
-    priorityAction: {
-      headline: "微積分-計算処理の確信度が「低」続き",
-      detail: "解けても自信が持てていない。週末に類題演習を追加する。",
-    },
+    subjectBreakdown: [{ subject: "数学", count: 5 }, { subject: "英語", count: 3 }, { subject: "化学", count: 1 }],
+    topStumbles: [{ label: "数学-解法説明", count: 4 }],
+    priorityAction: { headline: "数学の解法を口頭で説明", detail: "解法の根拠まで説明する練習を進める。" },
   },
   {
-    id: "s-sawaguchi",
-    name: "澤口 千夏",
-    initials: "SC",
-    grade: "既卒2年",
-    targetUniversity: "川崎医科大学",
+    id: "s-test-family",
+    name: "ゲスト生徒",
+    email: "test.family@example.com",
+    initials: "GT",
+    grade: "テスト",
+    targetUniversity: "テスト大学",
     health: "good",
     pendingTeacherChecks: 0,
-    questionsLast14Days: 14,
-    totalQuestions: 402,
-    lastActivity: "昨日",
-    subjectBreakdown: [
-      { subject: "化学", count: 6 },
-      { subject: "生物", count: 5 },
-      { subject: "英語", count: 3 },
-    ],
-    topStumbles: [{ label: "無機-反応経路", count: 3 }],
-    priorityAction: {
-      headline: "無機-反応経路は演習量で解消中",
-      detail: "週次復習メニュー通りに進行。現状の負荷を維持する。",
-    },
-  },
-  {
-    id: "s-miyaura",
-    name: "宮浦 健太",
-    initials: "MK",
-    grade: "高3",
-    targetUniversity: "岩手医科大学",
-    health: "urgent",
-    pendingTeacherChecks: 4,
-    questionsLast14Days: 7,
-    totalQuestions: 63,
-    lastActivity: "2日前",
-    subjectBreakdown: [
-      { subject: "英語", count: 4 },
-      { subject: "数学", count: 3 },
-    ],
-    topStumbles: [{ label: "英文法-仮定法", count: 3 }],
-    priorityAction: {
-      headline: "2日間ログインなし・質問停滞",
-      detail: "講師確認待ちが4件滞留。学習状況の確認連絡を優先する。",
-    },
+    questionsLast14Days: 0,
+    totalQuestions: 0,
+    lastActivity: "未実施",
+    subjectBreakdown: [],
+    topStumbles: [],
+    priorityAction: { headline: "テスト用アカウント", detail: "口頭試問の動作確認に使用します。" },
   },
 ];
 
@@ -152,10 +105,26 @@ export const demoStudent = students[0];
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+const seedMetaDefaults = {
+  university: demoStudent.targetUniversity,
+  year: "",
+  difficulty: "標準" as const,
+  format: "普段の問題" as const,
+  inputType: "テキスト" as const,
+  studentAttempt: "",
+  answerStatus: "復習完了" as const,
+  confidence: "中" as const,
+  weaknessHint: "",
+  teacherCheckNeeded: false,
+  teacherCheckResolved: true,
+  attachments: [],
+};
+
 // DB初回起動時のシード用データ。askedAtはシード投入時点からの相対時刻で計算する。
 export const demoStudentQaHistory: QaHistoryEntry[] = [
   {
     id: "q-seed-1",
+    studentId: demoStudent.id,
     subject: "数学",
     unit: "確率",
     question: "サイコロを3回投げて出た目の積が偶数になる確率が求められません。",
@@ -171,9 +140,11 @@ export const demoStudentQaHistory: QaHistoryEntry[] = [
     weaknessTag: "確率-条件整理",
     reviewSuggestion:
       "余事象を使う類題を3問、48時間以内に解き直すことをおすすめします。",
+    ...seedMetaDefaults,
   },
   {
     id: "q-seed-2",
+    studentId: demoStudent.id,
     subject: "化学",
     unit: "有機化学",
     question: "構造決定の問題で、どの反応から手をつければいいか分かりません。",
@@ -188,9 +159,11 @@ export const demoStudentQaHistory: QaHistoryEntry[] = [
     ],
     weaknessTag: "有機-構造決定",
     reviewSuggestion: "不飽和度の計算だけを繰り返す小テストを週末に行いましょう。",
+    ...seedMetaDefaults,
   },
   {
     id: "q-seed-3",
+    studentId: demoStudent.id,
     subject: "英語",
     unit: "英作文",
     question: "和文英訳で時制の使い分けがいつも不安になります。",
@@ -205,42 +178,7 @@ export const demoStudentQaHistory: QaHistoryEntry[] = [
     ],
     weaknessTag: "英作文-時制",
     reviewSuggestion: "現在完了と過去形を対比させる英作文を5題、週内に添削に出しましょう。",
+    ...seedMetaDefaults,
   },
 ];
 
-export const todaysNewQuestions = 8;
-export const todaysNewQuestionsDelta = "+3";
-
-export const totalPendingChecks = students.reduce(
-  (sum, student) => sum + student.pendingTeacherChecks,
-  0,
-);
-
-export const totalQuestionsLast14Days = students.reduce(
-  (sum, student) => sum + student.questionsLast14Days,
-  0,
-);
-
-export const priorityQueue = [...students]
-  .sort((a, b) => {
-    const rank: Record<string, number> = { urgent: 0, watch: 1, good: 2 };
-    if (rank[a.health] !== rank[b.health]) return rank[a.health] - rank[b.health];
-    return b.pendingTeacherChecks - a.pendingTeacherChecks;
-  })
-  .slice(0, 4);
-
-export const subjectTotals = [
-  { subject: "数学", count: 24 },
-  { subject: "英語", count: 21 },
-  { subject: "化学", count: 17 },
-  { subject: "生物", count: 11 },
-  { subject: "物理", count: 3 },
-];
-
-export const stumbleTotals = [
-  { label: "確率-条件整理", count: 6 },
-  { label: "構文-関係詞", count: 5 },
-  { label: "微積分-計算処理", count: 4 },
-  { label: "有機-構造決定", count: 4 },
-  { label: "英文法-仮定法", count: 3 },
-];

@@ -37,6 +37,19 @@ yarn-error.log*
 # local sqlite data
 /data/
 
+# uploaded reference book source files (large, copyrighted — never commit)
+/sankosho/
+/math2b/
+/math3c/
+/*.docx
+
+# downloaded OCR model weights (large binaries; re-fetch instead of committing)
+/scripts/ocr-models/
+
+# python build artifacts
+__pycache__/
+*.pyc
+
 # vercel
 .vercel
 
