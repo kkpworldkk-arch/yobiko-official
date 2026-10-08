@@ -33,7 +33,17 @@ import type {
 // 独立した永続ボリュームに置く。指定が無ければ開発時と同じ挙動(プロジェクト直下の
 // data/)にフォールバックする。これにより、standalone ビルドの出力に開発用DBが
 // 紛れ込んだり、再デプロイでデータディレクトリの場所が変わったりすることを防ぐ。
-const DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(process.cwd(), "data");
+//
+// ただし `next build` 中(NEXT_PHASE=phase-production-build)は、Renderなどの
+// 永続ディスクがまだマウントされておらず、本来のDATA_DIR(例: /var/data)への
+// アクセスが失敗する。ビルド中はこのモジュールが読み込まれるだけでも
+// fs.mkdirSync が実行されてしまうため、ビルド中は常にプロジェクト直下の
+// 使い捨てディレクトリにフォールバックする(実データには影響しない)。
+const isProductionBuild = process.env.NEXT_PHASE === "phase-production-build";
+const DATA_DIR =
+  !isProductionBuild && process.env.DATA_DIR
+    ? path.resolve(process.env.DATA_DIR)
+    : path.join(process.cwd(), "data");
 fs.mkdirSync(DATA_DIR, { recursive: true });
 
 // node:sqlite is built into Node — no native addon / node-gyp build step,
