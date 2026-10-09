@@ -91,6 +91,91 @@ function speak(text: string) {
   window.speechSynthesis.speak(utterance);
 }
 
+// 章リスト（参考書の掲載順）から、開始〜終了の章をまとめて切り出す。未指定なら絞り込まない。
+function chapterRange(chapters: string[], start: string, end: string): string[] | undefined {
+  if (!start && !end) return undefined;
+  const startIndex = start ? chapters.indexOf(start) : 0;
+  const endIndex = end ? chapters.indexOf(end) : chapters.length - 1;
+  if (startIndex < 0 || endIndex < 0) return undefined;
+  return chapters.slice(Math.min(startIndex, endIndex), Math.max(startIndex, endIndex) + 1);
+}
+
+interface RangeOption {
+  value: string;
+  label: string;
+}
+
+// 「開始 〜 終了」の2つのプルダウンで範囲を選ぶ。開始だけ選ぶとその1つに絞り、終了を広げて範囲にする。
+function RangeSelect({
+  label,
+  allLabel,
+  options,
+  start,
+  end,
+  onChange,
+}: {
+  label: string;
+  allLabel: string;
+  options: RangeOption[];
+  start: string;
+  end: string;
+  onChange: (start: string, end: string) => void;
+}) {
+  const indexOf = (value: string) => options.findIndex((option) => option.value === value);
+  const labelOf = (value: string | null, placeholder: string) =>
+    options.find((option) => option.value === value)?.label ?? placeholder;
+  const startIndex = start ? indexOf(start) : 0;
+  const endOptions = options.slice(Math.max(startIndex, 0));
+
+  function handleStartChange(value: string | null) {
+    if (!value || value === "all") {
+      onChange("", "");
+      return;
+    }
+    const keepEnd = end && indexOf(end) >= indexOf(value);
+    onChange(value, keepEnd ? end : value);
+  }
+
+  function handleEndChange(value: string | null) {
+    if (!value) return;
+    onChange(start || options[0].value, value);
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-caption text-slate-500">{label}</span>
+      <div className="flex items-center gap-2">
+        <Select value={start} onValueChange={(value) => handleStartChange(value as string | null)}>
+          <SelectTrigger aria-label={`${label}（開始）`} className="min-w-0 flex-1">
+            <SelectValue>{(value: string | null) => labelOf(value, allLabel)}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{allLabel}</SelectItem>
+            {options.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <span className="shrink-0 text-body-sm text-slate-500">〜</span>
+        <Select value={end} onValueChange={(value) => handleEndChange(value as string | null)}>
+          <SelectTrigger aria-label={`${label}（終了）`} className="min-w-0 flex-1">
+            <SelectValue>{(value: string | null) => labelOf(value, start ? "最後まで" : "—")}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {endOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+}
+
 type Stage = "loading" | "no-books" | "idle" | "active" | "feedback" | "complete" | "all-clear";
 
 export default function OralExamPage() {
@@ -102,7 +187,8 @@ export default function OralExamPage() {
     pageEnd: "",
     questionStart: "",
     questionEnd: "",
-    chapter: "",
+    chapterStart: "",
+    chapterEnd: "",
   });
   const [stage, setStage] = useState<Stage>("loading");
 
@@ -350,7 +436,7 @@ export default function OralExamPage() {
             pageEnd: filters.pageEnd ? Number(filters.pageEnd) : undefined,
             questionStart: filters.questionStart ? Number(filters.questionStart) : undefined,
             questionEnd: filters.questionEnd ? Number(filters.questionEnd) : undefined,
-            chapter: filters.chapter.trim() || undefined,
+            chapters: chapterRange(filterOptions[selectedBookId]?.chapters ?? [], filters.chapterStart, filters.chapterEnd),
           },
         }),
       });
@@ -472,7 +558,7 @@ export default function OralExamPage() {
                 value={selectedBookId}
                 onValueChange={(v) => {
                   setSelectedBookId(v as string);
-                  setFilters({ pageStart: "", pageEnd: "", questionStart: "", questionEnd: "", chapter: "" });
+                  setFilters({ pageStart: "", pageEnd: "", questionStart: "", questionEnd: "", chapterStart: "", chapterEnd: "" });
                   setStage("idle");
                 }}
               >
@@ -511,60 +597,39 @@ export default function OralExamPage() {
 
           <div className="mt-5 border-t border-white/[0.06] pt-5">
             <p className="text-caption text-slate-400">出題範囲</p>
-            <div className="mt-2 grid gap-3 sm:grid-cols-3">
+            <div className="mt-2 flex flex-col gap-4">
               {selectedFilterOptions && selectedFilterOptions.pages.length > 0 && (
-                <Select
-                  value={filters.pageStart}
-                  onValueChange={(value) => { const next = value ?? ""; setFilters((current) => ({ ...current, pageStart: next === "all" ? "" : next, pageEnd: next === "all" ? "" : next })); }}
-                >
-                  <SelectTrigger aria-label="ページ">
-                    <SelectValue placeholder="ページを選択" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">全ページ</SelectItem>
-                    {selectedFilterOptions.pages.map((page) => (
-                      <SelectItem key={page} value={String(page)}>
-                        p.{page}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <RangeSelect
+                  label="ページ"
+                  allLabel="全ページ"
+                  options={selectedFilterOptions.pages.map((page) => ({ value: String(page), label: `p.${page}` }))}
+                  start={filters.pageStart}
+                  end={filters.pageEnd}
+                  onChange={(pageStart, pageEnd) => setFilters((current) => ({ ...current, pageStart, pageEnd }))}
+                />
               )}
               {selectedFilterOptions && selectedFilterOptions.questionCount > 0 && (
-                <Select
-                  value={filters.questionStart}
-                  onValueChange={(value) => { const next = value ?? ""; setFilters((current) => ({ ...current, questionStart: next === "all" ? "" : next, questionEnd: next === "all" ? "" : next })); }}
-                >
-                  <SelectTrigger aria-label="問題番号">
-                    <SelectValue placeholder="問題番号を選択" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">全問題</SelectItem>
-                    {Array.from({ length: selectedFilterOptions.questionCount }, (_, index) => index + 1).map((number) => (
-                      <SelectItem key={number} value={String(number)}>
-                        問{number}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <RangeSelect
+                  label="問題番号"
+                  allLabel="全問題"
+                  options={Array.from({ length: selectedFilterOptions.questionCount }, (_, index) => ({
+                    value: String(index + 1),
+                    label: `問${index + 1}`,
+                  }))}
+                  start={filters.questionStart}
+                  end={filters.questionEnd}
+                  onChange={(questionStart, questionEnd) => setFilters((current) => ({ ...current, questionStart, questionEnd }))}
+                />
               )}
               {selectedFilterOptions && selectedFilterOptions.chapters.length > 0 && (
-                <Select
-                  value={filters.chapter}
-                  onValueChange={(value) => { const next = value ?? ""; setFilters((current) => ({ ...current, chapter: next === "all" ? "" : next })); }}
-                >
-                  <SelectTrigger aria-label="章・カテゴリ">
-                    <SelectValue placeholder="章・カテゴリを選択" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">全章・カテゴリ</SelectItem>
-                    {selectedFilterOptions.chapters.map((chapter) => (
-                      <SelectItem key={chapter} value={chapter}>
-                        {chapter}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <RangeSelect
+                  label="章・カテゴリ"
+                  allLabel="全章・カテゴリ"
+                  options={selectedFilterOptions.chapters.map((chapter) => ({ value: chapter, label: chapter }))}
+                  start={filters.chapterStart}
+                  end={filters.chapterEnd}
+                  onChange={(chapterStart, chapterEnd) => setFilters((current) => ({ ...current, chapterStart, chapterEnd }))}
+                />
               )}
             </div>
           </div>

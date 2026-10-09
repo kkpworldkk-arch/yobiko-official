@@ -165,7 +165,13 @@ function normalizeFilters(input: OralExamQuestionFilters | undefined): OralExamQ
     pageEnd: positiveInteger(input?.pageEnd),
     questionStart: positiveInteger(input?.questionStart),
     questionEnd: positiveInteger(input?.questionEnd),
-    chapter: typeof input?.chapter === "string" ? input.chapter.trim().slice(0, 100) : undefined,
+    chapters: Array.isArray(input?.chapters)
+      ? input.chapters
+          .filter((chapter): chapter is string => typeof chapter === "string")
+          .map((chapter) => chapter.trim().slice(0, 100))
+          .filter(Boolean)
+          .slice(0, 500)
+      : undefined,
   };
   if (filters.pageStart && filters.pageEnd && filters.pageStart > filters.pageEnd) {
     [filters.pageStart, filters.pageEnd] = [filters.pageEnd, filters.pageStart];

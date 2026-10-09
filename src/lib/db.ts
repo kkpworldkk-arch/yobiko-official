@@ -983,6 +983,7 @@ export function getOralExamQuestions(bookId: string): OralExamQuestionRecord[] {
 export function getOralExamFilterOptions(bookId: string): OralExamFilterOptions {
   const questions = getOralExamQuestions(bookId);
   const pages = new Set<number>();
+  // 章は五十音順ではなく参考書の掲載順（最初に出てくる問題の順）で並べる。範囲指定の「〜」が本の順序と一致するように。
   const chapters = new Set<string>();
   for (const question of questions) {
     if (question.sourcePage) pages.add(question.sourcePage);
@@ -992,7 +993,7 @@ export function getOralExamFilterOptions(bookId: string): OralExamFilterOptions 
   }
   return {
     pages: [...pages].sort((a, b) => a - b),
-    chapters: [...chapters].sort((a, b) => a.localeCompare(b, "ja")),
+    chapters: [...chapters],
     questionCount: questions.length,
   };
 }
@@ -1228,7 +1229,8 @@ export interface OralExamQuestionFilters {
   pageEnd?: number;
   questionStart?: number;
   questionEnd?: number;
-  chapter?: string;
+  // 出題対象の章・カテゴリ名（完全一致）。範囲指定は画面側で章リストを切り出して渡す。
+  chapters?: string[];
 }
 
 function pageFromQuestion(item: OralExamQueueItem): number | null {
@@ -1241,7 +1243,7 @@ function matchesOralExamFilters(item: OralExamQueueItem, filters: OralExamQuesti
   const questionNumber = item.question.orderIndex + 1;
   if (filters.questionStart && questionNumber < filters.questionStart) return false;
   if (filters.questionEnd && questionNumber > filters.questionEnd) return false;
-  if (filters.chapter && !item.question.category.toLocaleLowerCase().includes(filters.chapter.toLocaleLowerCase())) {
+  if (filters.chapters && filters.chapters.length > 0 && !filters.chapters.includes(item.question.category.trim())) {
     return false;
   }
   if (filters.pageStart || filters.pageEnd) {
