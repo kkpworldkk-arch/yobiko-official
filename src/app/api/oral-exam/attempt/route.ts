@@ -4,6 +4,7 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import {
   getOralExamBook,
+  hasUserAiConsent,
   getOralExamQuestion,
   getOralExamSession,
   getMastery,
@@ -56,6 +57,13 @@ export async function POST(request: NextRequest) {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "ログインが必要です" }, { status: 401 });
+  }
+
+  if (session.role === "family" && !hasUserAiConsent(session.userId)) {
+    return NextResponse.json(
+      { error: "AI機能を使うには、AIへのデータ送信への同意が必要です。" },
+      { status: 403 },
+    );
   }
 
   const body = (await request.json().catch(() => null)) as AttemptRequestBody | null;

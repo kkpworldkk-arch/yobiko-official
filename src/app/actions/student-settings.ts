@@ -1,13 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import {
+  deleteFamilyAccount,
   getUserById,
   insertStudentFeedback,
+  setUserAiConsent,
   updateUserPassword,
 } from "@/lib/db";
 import { hashPassword, verifyPassword } from "@/lib/password";
-import { getSession } from "@/lib/session";
+import { deleteSession, getSession } from "@/lib/session";
 import { resolveStudentIdentity } from "@/lib/student-identity";
 
 export interface ChangePasswordState {
@@ -78,4 +81,45 @@ export async function submitStudentFeedback(
 
   revalidatePath("/dashboard/settings");
   return { success: true };
+}
+
+export async function acceptAiConsent(): Promise<void> {
+  const session = await getSession();
+  if (!session) redirect("/login");
+  setUserAiConsent(session.userId, true);
+  revalidatePath("/student", "layout");
+}
+
+export async function withdrawAiConsent(): Promise<void> {
+  const session = await getSession();
+  if (!session) redirect("/login");
+  setUserAiConsent(session.userId, false);
+  revalidatePath("/student", "layout");
+}
+
+export interface DeleteAccountState {
+  error?: string;
+}
+
+export async function deleteAccount(
+  _prevState: DeleteAccountState,
+  formData: FormData,
+): Promise<DeleteAccountState> {
+  const session = await getSession();
+  if (!session) {
+    return { error: "ログインが必要です。" };
+  }
+  if (session.role !== "family") {
+    return { error: "講師アカウントはこの画面から削除できません。" };
+  }
+
+  const password = String(formData.get("password") ?? "");
+  const user = getUserById(session.userId);
+  if (!user || !verifyPassword(password, user.passwordHash)) {
+    return { error: "パスワードが正しくありません。" };
+  }
+
+  deleteFamilyAccount(user.id);
+  await deleteSession();
+  redirect("/login?deleted=1");
 }

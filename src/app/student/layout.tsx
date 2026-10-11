@@ -1,7 +1,10 @@
 import { redirect } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
+import { AiConsentGate } from "@/components/ai-consent-gate";
+import { NativeAppBridge } from "@/components/native-app-bridge";
 import { StudentNav } from "@/components/student-nav";
 import { StudentUserMenu } from "@/components/student-user-menu";
+import { hasUserAiConsent } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { resolveStudentIdentity } from "@/lib/student-identity";
 
@@ -18,6 +21,7 @@ export default async function StudentLayout({
 
   return (
     <div className="min-h-screen bg-navy-900">
+      <NativeAppBridge />
       <header className="flex flex-col gap-4 border-b border-border px-6 py-4 sm:px-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -38,7 +42,9 @@ export default async function StudentLayout({
         <StudentNav />
       </header>
 
-      <main className="mx-auto max-w-3xl px-6 py-10 sm:px-10">{children}</main>
+      <main className="mx-auto max-w-3xl px-6 py-10 sm:px-10">
+        <AiConsentGate consented={hasUserAiConsent(session.userId)}>{children}</AiConsentGate>
+      </main>
     </div>
   );
 }

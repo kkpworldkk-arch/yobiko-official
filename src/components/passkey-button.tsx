@@ -76,7 +76,7 @@ export function PasskeyButton({ mode, email = "" }: PasskeyButtonProps) {
         {isWorking ? <Loader2 className="size-4 animate-spin" /> : <Fingerprint className="size-4" />}
         {mode === "login" ? "生体認証でログイン" : "この端末の生体認証を登録"}
       </Button>
-      {error && <p className="text-caption text-crimson-400">{error}</p>}
+      {error && <p className="text-caption text-crimson-500">{error}</p>}
     </div>
   );
 }

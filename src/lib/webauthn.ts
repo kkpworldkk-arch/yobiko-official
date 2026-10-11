@@ -2,12 +2,17 @@ import { cookies } from "next/headers";
 
 export const WEBAUTHN_CHALLENGE_COOKIE = "webauthn-challenge";
 
+// Renderでは RENDER_EXTERNAL_HOSTNAME（例: takihara-app.onrender.com）が自動で設定されるので、
+// WEBAUTHN_RP_ID / WEBAUTHN_ORIGIN を明示していなければそれを使う。iOSアプリ内のパスキーも
+// このドメインに紐付く（/.well-known/apple-app-site-association を参照）。
 export function getWebAuthnRpId(): string {
-  return process.env.WEBAUTHN_RP_ID ?? "localhost";
+  return process.env.WEBAUTHN_RP_ID ?? process.env.RENDER_EXTERNAL_HOSTNAME ?? "localhost";
 }
 
 export function getWebAuthnOrigin(): string {
-  return process.env.WEBAUTHN_ORIGIN ?? "http://localhost:3000";
+  if (process.env.WEBAUTHN_ORIGIN) return process.env.WEBAUTHN_ORIGIN;
+  if (process.env.RENDER_EXTERNAL_HOSTNAME) return `https://${process.env.RENDER_EXTERNAL_HOSTNAME}`;
+  return "http://localhost:3000";
 }
 
 export async function setWebAuthnChallenge(challenge: string): Promise<void> {

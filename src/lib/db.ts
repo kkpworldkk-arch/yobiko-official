@@ -118,6 +118,10 @@ db.exec(`
   )
 `);
 
+// AI採点・AIチューターで回答を外部AI（Anthropic）に送ることへの同意日時。App Storeの審査基準
+// （第三者AIへの個人データ送信は事前の明示的な同意が必要）に合わせて、生徒ごとに記録する。
+ensureColumn("users", "ai_consent_at", "ai_consent_at TEXT");
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS webauthn_credentials (
     id TEXT PRIMARY KEY,
@@ -739,6 +743,48 @@ export function getUserById(id: string): UserRecord | null {
 
 export function updateUserPassword(id: string, passwordHash: string): void {
   db.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(passwordHash, id);
+}
+
+export function hasUserAiConsent(id: string): boolean {
+  const row = db.prepare("SELECT ai_consent_at FROM users WHERE id = ?").get(id) as
+    | { ai_consent_at: string | null }
+    | undefined;
+  return Boolean(row?.ai_consent_at);
+}
+
+export function setUserAiConsent(id: string, consented: boolean): void {
+  db.prepare("UPDATE users SET ai_consent_at = ? WHERE id = ?").run(
+    consented ? new Date().toISOString() : null,
+    id,
+  );
+}
+
+// 生徒・保護者による自分のアカウント削除。ログイン情報と、紐付いた生徒の学習記録をまとめて消す。
+// 生徒台帳（students）の行は講師が管理する名簿なので残し、紐付けだけ外す（講師が別途削除できる）。
+export function deleteFamilyAccount(userId: string): void {
+  const studentId = getStudentIdForUser(userId);
+  db.exec("BEGIN");
+  try {
+    if (studentId) {
+      for (const table of [
+        "oral_exam_attempts",
+        "oral_exam_sessions",
+        "oral_exam_mastery",
+        "oral_exam_insights",
+        "qa_history",
+      ]) {
+        db.prepare(`DELETE FROM ${table} WHERE student_id = ?`).run(studentId);
+      }
+      db.prepare("UPDATE students SET user_id = NULL WHERE id = ?").run(studentId);
+    }
+    db.prepare("DELETE FROM student_feedback WHERE user_id = ?").run(userId);
+    db.prepare("DELETE FROM webauthn_credentials WHERE user_id = ?").run(userId);
+    db.prepare("DELETE FROM users WHERE id = ? AND role = 'family'").run(userId);
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
 }
 
 export function createUser(input: {

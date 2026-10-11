@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { masteryLevelLabel } from "@/lib/oral-exam-mastery";
+import { isNativeApp, startNativeSpeech } from "@/lib/native-speech";
 import { formatRelativeTimeJa } from "@/lib/format";
 import type {
   OralExamAttempt,
@@ -203,6 +204,7 @@ export default function OralExamPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [interimTranscript, setInterimTranscript] = useState("");
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const stopNativeSpeechRef = useRef<(() => void) | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const isDrawingRef = useRef(false);
@@ -280,6 +282,7 @@ export default function OralExamPage() {
   useEffect(() => {
     return () => {
       recognitionRef.current?.stop();
+      stopNativeSpeechRef.current?.();
       if (typeof window !== "undefined") window.speechSynthesis?.cancel();
     };
   }, []);
@@ -315,7 +318,34 @@ export default function OralExamPage() {
     }
   }
 
+  async function startNativeRecording() {
+    setVoiceUnsupported(false);
+    setIsRecording(true);
+    const stop = await startNativeSpeech({
+      onPartial: (text) => setInterimTranscript(text),
+      onFinal: (text) => {
+        setAnswerText((prev) => `${prev}${text}`);
+        setInterimTranscript("");
+      },
+      onEnd: () => {
+        stopNativeSpeechRef.current = null;
+        setIsRecording(false);
+        setInterimTranscript("");
+      },
+    });
+    if (!stop) {
+      setIsRecording(false);
+      setVoiceUnsupported(true);
+      return;
+    }
+    stopNativeSpeechRef.current = stop;
+  }
+
   function startRecording() {
+    if (isNativeApp()) {
+      void startNativeRecording();
+      return;
+    }
     const Ctor = getSpeechRecognitionCtor();
     if (!Ctor) {
       setVoiceUnsupported(true);
@@ -356,6 +386,11 @@ export default function OralExamPage() {
 
   function stopRecording() {
     recognitionRef.current?.stop();
+    // アプリでは確定した認識結果が届いた時点（onEnd）で録音中の表示を消す
+    if (stopNativeSpeechRef.current) {
+      stopNativeSpeechRef.current();
+      return;
+    }
     setIsRecording(false);
   }
 
@@ -813,7 +848,9 @@ export default function OralExamPage() {
                         </div>
                         {voiceUnsupported && (
                           <p className="text-caption text-slate-500">
-                            お使いのブラウザは音声入力に対応していません。キーボードでの入力をご利用ください。
+                            {isNativeApp()
+                              ? "音声入力を使うには、iPhoneの「設定」→「滝原塾」でマイクと音声認識を許可してください。"
+                              : "お使いのブラウザは音声入力に対応していません。キーボードでの入力をご利用ください。"}
                           </p>
                         )}
                         {interimTranscript && (

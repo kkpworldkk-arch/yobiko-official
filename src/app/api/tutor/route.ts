@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { getQaHistory, insertQaHistory, resolveTeacherCheck } from "@/lib/db";
+import { getQaHistory, hasUserAiConsent, insertQaHistory, resolveTeacherCheck } from "@/lib/db";
 import { generateTutorResponse } from "@/lib/ai-tutor-mock";
 import { buildPersonalizationContext } from "@/lib/personalization";
 import { getSession } from "@/lib/session";
@@ -92,6 +92,13 @@ export async function POST(request: NextRequest) {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "ログインが必要です" }, { status: 401 });
+  }
+
+  if (session.role === "family" && !hasUserAiConsent(session.userId)) {
+    return NextResponse.json(
+      { error: "AI機能を使うには、AIへのデータ送信への同意が必要です。" },
+      { status: 403 },
+    );
   }
 
   const body = (await request.json().catch(() => null)) as TutorRequestBody | null;

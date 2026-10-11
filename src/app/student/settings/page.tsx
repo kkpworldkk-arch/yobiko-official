@@ -1,9 +1,13 @@
-import { KeyRound, MessageSquareText, UserCircle } from "lucide-react";
+import { BrainCircuit, KeyRound, MessageSquareText, Trash2, UserCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DeleteAccountForm } from "@/components/delete-account-form";
+import { StudyReminderSettings } from "@/components/study-reminder-settings";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { StudentFeedbackForm } from "@/components/student-feedback-form";
 import { StudentPasswordForm } from "@/components/student-password-form";
 import { PasskeyButton } from "@/components/passkey-button";
-import { getStudentFeedbackForUser } from "@/lib/db";
+import { withdrawAiConsent } from "@/app/actions/student-settings";
+import { getStudentFeedbackForUser, hasUserAiConsent } from "@/lib/db";
 import { formatRelativeTimeJa } from "@/lib/format";
 import { getSession } from "@/lib/session";
 import { resolveStudentIdentity } from "@/lib/student-identity";
@@ -14,6 +18,7 @@ export default async function StudentSettingsPage() {
   const session = await getSession();
   const identity = resolveStudentIdentity(session);
   const pastFeedback = session ? getStudentFeedbackForUser(session.userId) : [];
+  const aiConsented = session ? hasUserAiConsent(session.userId) : false;
 
   return (
     <div className="flex flex-col gap-6">
@@ -61,6 +66,8 @@ export default async function StudentSettingsPage() {
         <PasskeyButton mode="register" />
       </section>
 
+      <StudyReminderSettings />
+
       <section className="rounded-xl border border-border bg-card p-6 shadow-panel">
         <h2 className="flex items-center gap-2 text-h3 text-ivory-100">
           <MessageSquareText className="size-4.5 text-slate-400" strokeWidth={1.75} />
@@ -94,6 +101,36 @@ export default async function StudentSettingsPage() {
             ))}
           </div>
         )}
+      </section>
+
+      <section className="rounded-xl border border-border bg-card p-6 shadow-panel">
+        <h2 className="flex items-center gap-2 text-h3 text-ivory-100">
+          <BrainCircuit className="size-4.5 text-slate-400" strokeWidth={1.75} />
+          AI機能へのデータ送信
+        </h2>
+        <p className="mt-1 mb-5 text-body-sm text-slate-400">
+          {aiConsented
+            ? "AI口頭試問・AIチューターの採点のため、回答内容をAnthropic社のAI（Claude）に送信することに同意しています。取り消すと、AI機能は再び同意するまで使えなくなります。"
+            : "現在、AIへのデータ送信に同意していないため、AI口頭試問・AIチューターは使えません。AI口頭試問の画面から同意できます。"}
+        </p>
+        {aiConsented && (
+          <form action={withdrawAiConsent}>
+            <Button type="submit" variant="secondary" className="h-10 px-4 text-body-sm">
+              同意を取り消す
+            </Button>
+          </form>
+        )}
+      </section>
+
+      <section className="rounded-xl border border-border bg-card p-6 shadow-panel">
+        <h2 className="flex items-center gap-2 text-h3 text-ivory-100">
+          <Trash2 className="size-4.5 text-slate-400" strokeWidth={1.75} />
+          アカウントの削除
+        </h2>
+        <p className="mt-1 mb-5 text-body-sm text-slate-400">
+          このアカウントと学習記録を削除します。
+        </p>
+        <DeleteAccountForm />
       </section>
     </div>
   );

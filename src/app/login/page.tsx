@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useSyncExternalStore } from "react";
+import Link from "next/link";
 import { Eye, EyeOff, Lock, Mail, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,10 +12,19 @@ import { login, type LoginState } from "@/app/actions/auth";
 
 const initialState: LoginState = {};
 
+const subscribeNothing = () => () => {};
+
 export default function LoginPage() {
   const [role, setRole] = useState<"teacher" | "family">("teacher");
   const [email, setEmail] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotHint, setShowForgotHint] = useState(false);
+  // アカウント削除直後は /login?deleted=1 に戻ってくる
+  const accountDeleted = useSyncExternalStore(
+    subscribeNothing,
+    () => new URLSearchParams(window.location.search).has("deleted"),
+    () => false,
+  );
   const [state, formAction, isSubmitting] = useActionState(
     login,
     initialState,
@@ -56,6 +66,11 @@ export default function LoginPage() {
             <p className="mt-2 text-body-sm text-slate-400">
               医学部合格までの歩みを、専属アプリで支えます。
             </p>
+            <p className="mt-3 text-caption leading-relaxed text-slate-500">
+              滝原塾の塾生・保護者・講師専用のアプリです。
+              <br />
+              アカウントは塾から発行されます。
+            </p>
           </div>
         </div>
 
@@ -73,8 +88,14 @@ export default function LoginPage() {
           <form action={formAction} className="flex flex-col gap-5">
             <input type="hidden" name="role" value={role} />
 
+            {accountDeleted && !state.error && (
+              <p className="rounded-lg border border-sage-500/25 bg-sage-500/[0.06] px-3.5 py-2.5 text-body-sm text-sage-500">
+                アカウントを削除しました。ご利用ありがとうございました。
+              </p>
+            )}
+
             {state.error && (
-              <p className="rounded-lg border border-crimson-500/25 bg-crimson-500/[0.06] px-3.5 py-2.5 text-body-sm text-crimson-400">
+              <p className="rounded-lg border border-crimson-500/25 bg-crimson-500/[0.06] px-3.5 py-2.5 text-body-sm text-crimson-500">
                 {state.error}
               </p>
             )}
@@ -107,13 +128,23 @@ export default function LoginPage() {
                 >
                   パスワード
                 </Label>
-                <a
-                  href="#"
+                <button
+                  type="button"
+                  onClick={() => setShowForgotHint((prev) => !prev)}
                   className="text-caption text-slate-400 transition-colors duration-300 hover:text-gold-400"
                 >
                   お忘れですか
-                </a>
+                </button>
               </div>
+              {showForgotHint && (
+                <p className="rounded-lg border border-white/[0.06] bg-navy-800/60 px-3.5 py-2.5 text-caption leading-relaxed text-slate-300">
+                  パスワードの再設定は講師が行います。担当講師、または
+                  <Link href="/support" className="mx-0.5 text-gold-400 underline-offset-2 hover:underline">
+                    お問い合わせ窓口
+                  </Link>
+                  までご連絡ください。
+                </p>
+              )}
               <div className="relative">
                 <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                 <Input
@@ -158,6 +189,14 @@ export default function LoginPage() {
           <br />
           お困りの際は専属コンシェルジュまでご連絡ください。
         </p>
+        <div className="mt-4 flex gap-4 text-caption text-slate-500">
+          <Link href="/privacy" className="transition-colors hover:text-gold-400">
+            プライバシーポリシー
+          </Link>
+          <Link href="/support" className="transition-colors hover:text-gold-400">
+            お問い合わせ
+          </Link>
+        </div>
       </div>
     </main>
   );

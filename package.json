@@ -14,11 +14,15 @@
     "import:book-questions": "python scripts/import-reference-questions.py",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "ios:sync": "cap sync ios",
+    "ios:assets": "capacitor-assets generate --ios --assetPath mobile/assets"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.112.3",
     "@base-ui/react": "^1.6.0",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/local-notifications": "^8.3.1",
     "@simplewebauthn/browser": "^14.0.0",
     "@simplewebauthn/server": "^14.0.3",
     "@tailwindcss/postcss": "^4",
@@ -41,6 +45,9 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.5.3",
+    "@capacitor/ios": "^8.5.3",
     "open": "^11.0.0"
   }
 }

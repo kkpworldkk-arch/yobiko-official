@@ -25,7 +25,7 @@ export function StudentPasswordForm() {
       className="flex flex-col gap-4"
     >
       {state.error && (
-        <p className="rounded-lg border border-crimson-500/25 bg-crimson-500/[0.06] px-3.5 py-2.5 text-body-sm text-crimson-400">
+        <p className="rounded-lg border border-crimson-500/25 bg-crimson-500/[0.06] px-3.5 py-2.5 text-body-sm text-crimson-500">
           {state.error}
         </p>
       )}
