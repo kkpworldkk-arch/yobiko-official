@@ -316,6 +316,15 @@ db.exec(`
   )
 `);
 
+// 参考書ごとの問題一覧・問題数（7,000問超）や生徒ごとの履歴を、全件走査せずに引くための索引。
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_oral_exam_questions_book ON oral_exam_questions(book_id, order_index);
+  CREATE INDEX IF NOT EXISTS idx_oral_exam_assignments_book ON oral_exam_assignments(book_id);
+  CREATE INDEX IF NOT EXISTS idx_oral_exam_attempts_student ON oral_exam_attempts(student_id, created_at);
+  CREATE INDEX IF NOT EXISTS idx_oral_exam_sessions_student ON oral_exam_sessions(student_id);
+  CREATE INDEX IF NOT EXISTS idx_qa_history_student ON qa_history(student_id);
+`);
+
 interface QaRow {
   id: string;
   student_id: string;

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import {
   createOralExamSession,
   ensureOralExamSeeded,
@@ -15,6 +15,8 @@ import type { OralExamQuestionFilters } from "@/lib/db";
 
 const QUEUE_SIZE = 10;
 const REVIEW_POOL_SIZE = 25;
+// 点検不要の問題がこれだけ揃っていれば、AI点検の完了を待たずにすぐ出題を始める
+const MIN_READY_TO_START = 3;
 
 interface SessionRequestBody {
   bookId?: string;
@@ -49,13 +51,28 @@ function needsQuestionReview(item: OralExamQueueItem): boolean {
 async function buildQueue(pool: OralExamQueueItem[]): Promise<OralExamQueueItem[]> {
   const accepted: OralExamQueueItem[] = [];
   const candidates = pool.filter((item) => !needsQuestionReview(item));
-  const suspicious = pool.filter((item) => needsQuestionReview(item));
+  const suspicious = pool.filter((item) => needsQuestionReview(item)).slice(0, QUEUE_SIZE);
 
   accepted.push(...candidates.slice(0, QUEUE_SIZE));
-  if (accepted.length >= QUEUE_SIZE) return accepted.slice(0, QUEUE_SIZE);
+  // 怪しい問題のAI点検は数秒かかる。すぐ出せる問題が十分あるときは待たせずに返し、
+  // 点検はレスポンス後に裏で済ませて次回以降の出題に反映する。
+  if (accepted.length >= MIN_READY_TO_START) {
+    if (suspicious.length > 0) {
+      after(() => reviewItems(suspicious).catch((error) => {
+        console.error("Background question review failed:", error);
+      }));
+    }
+    return accepted;
+  }
 
-  const reviewed = await Promise.all(
-    suspicious.map(async (item) => {
+  const reviewed = await reviewItems(suspicious);
+  accepted.push(...reviewed.filter((item): item is OralExamQueueItem => item !== null));
+  return accepted.slice(0, QUEUE_SIZE);
+}
+
+async function reviewItems(items: OralExamQueueItem[]): Promise<(OralExamQueueItem | null)[]> {
+  return Promise.all(
+    items.map(async (item) => {
       const question = item.question;
       const result = await reviewOralExamQuestion({
         category: question.category,
@@ -85,12 +102,9 @@ async function buildQueue(pool: OralExamQueueItem[]): Promise<OralExamQueueItem[
           modelAnswer: question.modelAnswer,
         });
       }
-      return result.status === "error" ? item : item;
+      return item;
     }),
   );
-
-  accepted.push(...reviewed.filter((item): item is OralExamQueueItem => item !== null));
-  return accepted.slice(0, QUEUE_SIZE);
 }
 
 export const dynamic = "force-dynamic";
