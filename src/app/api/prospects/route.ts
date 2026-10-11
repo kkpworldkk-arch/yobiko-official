@@ -124,12 +124,12 @@ export async function POST(request: NextRequest) {
       ].filter(Boolean);
 
       const message = await client.messages.parse({
-        model: "claude-opus-4-8",
-        max_tokens: 4096,
+        model: "claude-sonnet-5-5",
+        max_tokens: 16000,
         thinking: { type: "adaptive" },
         output_config: {
           format: zodOutputFormat(ExamReportSchema),
-          effort: "high",
+          effort: "medium",
         },
         system: SYSTEM_PROMPT,
         messages: [{ role: "user", content: contextLines.join("\n") }],

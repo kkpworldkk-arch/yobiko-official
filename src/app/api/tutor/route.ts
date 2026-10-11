@@ -153,12 +153,14 @@ export async function POST(request: NextRequest) {
       ].filter(Boolean);
 
       const message = await client.messages.parse({
-        model: "claude-opus-4-8",
-        max_tokens: 4096,
+        // 高校範囲の解説は Sonnet で質が十分で、Opus より速く安い。思考トークンも max_tokens に
+        // 含まれるため、解説が途中で切れないよう上限は大きめにしている。
+        model: "claude-sonnet-5-5",
+        max_tokens: 16000,
         thinking: { type: "adaptive" },
         output_config: {
           format: zodOutputFormat(TutorResponseSchema),
-          effort: "high",
+          effort: "medium",
         },
         system: SYSTEM_PROMPT,
         messages: [{ role: "user", content: contextLines.join("\n") }],

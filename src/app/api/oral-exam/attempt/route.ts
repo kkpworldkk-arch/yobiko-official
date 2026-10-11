@@ -162,12 +162,11 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      // 採点は模範解答との照合が中心の定型タスクのため、Opus + 拡張思考 + 高effortは
-      // 過剰品質だった(体感速度の遅さの主因)。Sonnetに変更し、さらにeffortをlowにして
-      // 内部の思考量を減らし速度を優先する。
+      // 採点は模範解答との照合が中心の定型タスクのため、Sonnet + effort low で速度を優先する。
+      // 思考トークンも max_tokens に含まれるので、JSONが途中で切れないよう余裕を持たせている。
       const message = await client.messages.parse({
-        model: "claude-sonnet-5",
-        max_tokens: 768,
+        model: "claude-sonnet-5-5",
+        max_tokens: 4096,
         output_config: {
           format: zodOutputFormat(OralExamGradeSchema),
           effort: "low",

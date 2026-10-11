@@ -58,9 +58,11 @@ export async function reviewOralExamQuestion(question: {
   try {
     const client = new Anthropic({ apiKey });
     const message = await client.messages.parse({
-      model: "claude-sonnet-5",
-      max_tokens: 600,
-      output_config: { format: zodOutputFormat(ReviewSchema) },
+      // 出題前の問題点検（OCR崩れの判定・修正）。レスポンス後に裏で走ることが多いが、
+      // 件数が多いので軽めの設定にしている。
+      model: "claude-sonnet-5-5",
+      max_tokens: 4096,
+      output_config: { format: zodOutputFormat(ReviewSchema), effort: "low" },
       system: SYSTEM_PROMPT,
       messages: [
         {
