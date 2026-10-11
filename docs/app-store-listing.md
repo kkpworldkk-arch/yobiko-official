@@ -16,7 +16,7 @@ App Store Connect の各欄にそのまま貼り付けられる形にしてい�
 | プライバシーポリシーURL | https://takihara-app.onrender.com/privacy |
 | サポートURL | https://takihara-app.onrender.com/support |
 | マーケティングURL | （空欄でよい） |
-| 著作権 | 2026 ［あなたの氏名］ |
+| 著作権 | 2026 木暮啓人 |
 
 ## プロモーション用テキスト（170文字以内）
 
