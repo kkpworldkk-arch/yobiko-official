@@ -13,7 +13,7 @@ import {
   upsertMastery,
 } from "@/lib/db";
 import { generateOralExamFeedback } from "@/lib/oral-exam-mock";
-import { computeNextMastery, masteryLevelLabel, speedLabel } from "@/lib/oral-exam-mastery";
+import { computeNextMastery, masteryLevelLabel, questionKind, speedLabel } from "@/lib/oral-exam-mastery";
 import { getSession } from "@/lib/session";
 import { resolveStudentIdentity } from "@/lib/student-identity";
 import type { OralExamInputMode } from "@/lib/types";
@@ -200,11 +200,13 @@ export async function POST(request: NextRequest) {
     graded = mock;
   }
 
+  const kind = questionKind(question, book?.subject);
   const previousMastery = getMastery(studentId, questionId);
   const nextState = computeNextMastery(
     previousMastery,
     graded.isCorrect ? "correct" : "incorrect",
     responseTimeMs,
+    kind,
   );
   upsertMastery({
     studentId,
@@ -242,6 +244,6 @@ export async function POST(request: NextRequest) {
       label: masteryLevelLabel(nextState.level),
       nextReviewAt: nextState.nextReviewAt,
     },
-    speed: speedLabel(responseTimeMs),
+    speed: speedLabel(responseTimeMs, kind),
   });
 }

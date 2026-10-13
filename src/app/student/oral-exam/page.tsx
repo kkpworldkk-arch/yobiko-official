@@ -32,6 +32,7 @@ import {
 import { masteryLevelLabel } from "@/lib/oral-exam-mastery";
 import { isNativeApp, startNativeSpeech } from "@/lib/native-speech";
 import { formatRelativeTimeJa } from "@/lib/format";
+import type { OralExamQuestionKind } from "@/lib/oral-exam-mastery";
 import type {
   OralExamAttempt,
   OralExamBook,
@@ -44,6 +45,7 @@ interface QueueQuestion {
   id: string;
   category: string;
   prompt: string;
+  kind: OralExamQuestionKind;
   mastery: OralExamMastery | null;
 }
 
@@ -83,12 +85,20 @@ function getSpeechRecognitionCtor(): (new () => SpeechRecognitionLike) | null {
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
 
-function speak(text: string) {
-  if (typeof window === "undefined" || !window.speechSynthesis) return;
+// onEnd は読み上げが終わったとき（読み上げできない環境では即座に）呼ばれる。
+function speak(text: string, onEnd?: () => void) {
+  if (typeof window === "undefined" || !window.speechSynthesis) {
+    onEnd?.();
+    return;
+  }
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "ja-JP";
   utterance.rate = 0.98;
+  if (onEnd) {
+    utterance.onend = onEnd;
+    utterance.onerror = onEnd;
+  }
   window.speechSynthesis.speak(utterance);
 }
 
@@ -226,7 +236,31 @@ export default function OralExamPage() {
   const [isFlagging, setIsFlagging] = useState(false);
   const [flagDone, setFlagDone] = useState(false);
 
+  // 反応時間の計測。読み上げを聞いている時間は含めず、読み上げ終了（readEnd）から数える。
+  // 覚えているかを問う問題は「答え始めた瞬間（firstInput）」まで、解く問題は「回答送信」までを測る。
   const revealTimeRef = useRef<number>(0);
+  const readEndTimeRef = useRef<number | null>(null);
+  const firstInputTimeRef = useRef<number | null>(null);
+
+  function presentQuestion(question: QueueQuestion) {
+    revealTimeRef.current = performance.now();
+    readEndTimeRef.current = null;
+    firstInputTimeRef.current = null;
+    speak(question.prompt, () => {
+      if (readEndTimeRef.current === null) readEndTimeRef.current = performance.now();
+    });
+  }
+
+  function markFirstInput() {
+    if (firstInputTimeRef.current === null) firstInputTimeRef.current = performance.now();
+  }
+
+  function measureResponseTimeMs(kind: OralExamQuestionKind): number {
+    const now = performance.now();
+    const start = readEndTimeRef.current ?? revealTimeRef.current;
+    const end = kind === "recall" ? (firstInputTimeRef.current ?? now) : now;
+    return Math.max(0, Math.round(end - start));
+  }
 
   const loadHistory = useCallback((limit: number) => {
     return fetch(`/api/oral-exam/history?limit=${limit}`)
@@ -342,6 +376,7 @@ export default function OralExamPage() {
   }
 
   function startRecording() {
+    markFirstInput();
     if (isNativeApp()) {
       void startNativeRecording();
       return;
@@ -418,6 +453,7 @@ export default function OralExamPage() {
   }
 
   function handlePointerDown(e: React.PointerEvent<HTMLCanvasElement>) {
+    markFirstInput();
     e.currentTarget.setPointerCapture(e.pointerId);
     isDrawingRef.current = true;
     lastPointRef.current = pointFromEvent(e);
@@ -489,8 +525,7 @@ export default function OralExamPage() {
         setStage("all-clear");
         return;
       }
-      revealTimeRef.current = performance.now();
-      speak(data.queue[0].prompt);
+      presentQuestion(data.queue[0]);
       setStage("active");
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "開始に失敗しました。時間をおいて再度お試しください。");
@@ -507,7 +542,7 @@ export default function OralExamPage() {
     setIsSubmitting(true);
     setErrorMessage(null);
 
-    const responseTimeMs = Math.round(performance.now() - revealTimeRef.current);
+    const responseTimeMs = measureResponseTimeMs(currentQuestion.kind);
     const answerImageDataUrl =
       activeMode === "handwriting" ? canvasRef.current?.toDataURL("image/png") : undefined;
 
@@ -546,8 +581,7 @@ export default function OralExamPage() {
     }
     setCurrentIndex(nextIndex);
     resetAnswerState();
-    revealTimeRef.current = performance.now();
-    speak(queue[nextIndex].prompt);
+    presentQuestion(queue[nextIndex]);
     setStage("active");
   }
 
@@ -811,7 +845,10 @@ export default function OralExamPage() {
                     <TabsContent value="keyboard">
                       <Textarea
                         value={answerText}
-                        onChange={(e) => setAnswerText(e.target.value)}
+                        onChange={(e) => {
+                          markFirstInput();
+                          setAnswerText(e.target.value);
+                        }}
                         placeholder="回答をキーボードで入力してください。"
                         rows={5}
                         className="resize-none"
@@ -858,7 +895,10 @@ export default function OralExamPage() {
                         )}
                         <Textarea
                           value={answerText}
-                          onChange={(e) => setAnswerText(e.target.value)}
+                          onChange={(e) => {
+                          markFirstInput();
+                          setAnswerText(e.target.value);
+                        }}
                           placeholder="話した内容がここに文字として入力されます。必要に応じて編集してください。"
                           rows={5}
                           className="resize-none"

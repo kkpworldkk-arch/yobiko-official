@@ -7,6 +7,7 @@ import {
   isBookAssignedToStudent,
   markQuestionReviewed,
 } from "@/lib/db";
+import { questionKind } from "@/lib/oral-exam-mastery";
 import { reviewOralExamQuestion } from "@/lib/oral-exam-review";
 import { getSession } from "@/lib/session";
 import { resolveStudentIdentity } from "@/lib/student-identity";
@@ -163,6 +164,7 @@ export async function POST(request: NextRequest) {
     id: item.question.id,
     category: item.question.category,
     prompt: item.question.prompt,
+    kind: questionKind(item.question, book.subject),
     mastery: item.mastery,
   }));
 
