@@ -44,15 +44,10 @@ git pull && bash scripts/ios-open-on-mac.sh
 3. 「Associated Domains」が表示されていて、`webcredentials:takihara-app.onrender.com` が入っていることを確認
 4. 上部の「+ Capability」から **Push Notifications は追加しない**（ローカル通知だけなので不要）
 
-## 4. Render に チームID を設定（Face ID ログインのため）
+## 4. チームID（設定済み）
 
-Render ダッシュボード → takihara-app → Environment → 「Add Environment Variable」
-
-| Key | Value |
-|---|---|
-| `APPLE_APP_ID` | `チームID.jp.takiharajuku.app`（例: `AB12CD34EF.jp.takiharajuku.app`） |
-
-保存すると自動で再起動されます。
+チームID `8XQPA6UJ83` は `src/app/.well-known/apple-app-site-association/route.ts` に既定値として入っている。
+別のチーム・バンドルIDで出し直すときだけ、Render の環境変数 `APPLE_APP_ID` で上書きする。
 
 ## 5. 実機で試す
 

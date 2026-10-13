@@ -31,9 +31,6 @@ services:
         sync: false
       - key: SESSION_SECRET
         generateValue: true
-      # iOSアプリ内のパスキー用。「チームID.jp.takiharajuku.app」（Apple Developer登録後に手動で設定）
-      - key: APPLE_APP_ID
-        sync: false
     disk:
       name: takihara-data
       mountPath: /var/data

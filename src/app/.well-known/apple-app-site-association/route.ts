@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 
 // iOSアプリ内でこのドメインのパスキー（Face ID / Touch ID ログイン）を使うための紐付けファイル。
-// APPLE_APP_ID は「チームID.バンドルID」（例: ABCDE12345.jp.takihara.app）。Apple Developer登録後に
-// Renderの環境変数へ設定する。未設定なら空の紐付けを返す（アプリ以外の動作には影響しない）。
+// 値は「チームID.バンドルID」。チームIDは秘密情報ではない（このファイル自体が公開される）ので既定値として
+// 直接書いている。アプリを別のチームやバンドルIDで出し直すときだけ、環境変数 APPLE_APP_ID で上書きする。
+const DEFAULT_APPLE_APP_ID = "8XQPA6UJ83.jp.takiharajuku.app";
+
 export function GET() {
-  const appId = process.env.APPLE_APP_ID;
+  const appId = process.env.APPLE_APP_ID || DEFAULT_APPLE_APP_ID;
   return NextResponse.json({
-    webcredentials: { apps: appId ? [appId] : [] },
+    webcredentials: { apps: [appId] },
   });
 }
