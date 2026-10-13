@@ -56,6 +56,21 @@ export default function SupportPage() {
           </dl>
         </section>
 
+        <section className="mt-8">
+          <h2 className="text-h3 text-ivory-100">開発者</h2>
+          <p className="mt-2 text-body-sm text-slate-300">
+            このアプリは {OPERATOR.name} が企画・開発しています。
+          </p>
+          <a
+            href={OPERATOR.developerPortfolioUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-1 inline-block text-body-sm text-gold-400 underline-offset-2 hover:underline"
+          >
+            開発者のポートフォリオを見る
+          </a>
+        </section>
+
         <div className="mt-10 flex gap-4 text-caption text-slate-500">
           <Link href="/privacy" className="hover:text-gold-400">
             プライバシーポリシー
