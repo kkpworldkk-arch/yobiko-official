@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { createHash, randomBytes, randomUUID, scryptSync } from "node:crypto";
 import { demoStudent, demoStudentQaHistory, students } from "@/lib/mock-data";
-import { demoOralExamBookSeed } from "@/lib/oral-exam-mock";
+import { demoOralExamBookSeed, reviewSampleBookSeed } from "@/lib/oral-exam-mock";
 import { isDue } from "@/lib/oral-exam-mastery";
 import { REFERENCE_BOOK_CATALOG } from "@/lib/reference-book-catalog";
 import type {
@@ -1689,6 +1689,7 @@ function ensureReferenceBookCataloged(): void {
 // 登録するため、誤読した設問を自動生成せず、各参考書を問題数0の状態で表示する。
 export function ensureOralExamSeeded(): void {
   ensureReferenceBookCataloged();
+  ensureReviewSampleBook();
   const bookCount = countRow("SELECT COUNT(*) as count FROM oral_exam_books");
   if (bookCount > 0) {
     assignChemistryBookToAllStudents();
@@ -1714,6 +1715,34 @@ function assignChemistryBookToAllStudents(): void {
 
   const students = db.prepare("SELECT id FROM students").all() as { id: string }[];
   for (const student of students) {
+    if (student.id === REVIEW_STUDENT_ID) continue;
     assignOralExamBook(student.id, book.id);
   }
+}
+
+// App Store 審査用のゲスト生徒（test.family@example.com に紐付く生徒台帳）。審査の担当者に市販の参考書の
+// 問題が見えないよう、塾オリジナルの体験用問題集だけを割り当てた状態を常に保つ。
+export const REVIEW_STUDENT_ID = "s-test-family";
+
+function ensureReviewSampleBook(): void {
+  const reviewStudent = db.prepare("SELECT id FROM students WHERE id = ?").get(REVIEW_STUDENT_ID);
+  if (!reviewStudent) return;
+
+  const existing = db
+    .prepare("SELECT id FROM oral_exam_books WHERE title = ?")
+    .get(reviewSampleBookSeed.book.title) as { id: string } | undefined;
+  const bookId = existing?.id ?? createOralExamBook(reviewSampleBookSeed.book).id;
+  const questionCount = countRow(
+    "SELECT COUNT(*) as count FROM oral_exam_questions WHERE book_id = ?",
+    bookId,
+  );
+  if (questionCount === 0) {
+    bulkAddOralExamQuestions(bookId, reviewSampleBookSeed.questions);
+  }
+
+  db.prepare("DELETE FROM oral_exam_assignments WHERE student_id = ? AND book_id != ?").run(
+    REVIEW_STUDENT_ID,
+    bookId,
+  );
+  assignOralExamBook(REVIEW_STUDENT_ID, bookId);
 }

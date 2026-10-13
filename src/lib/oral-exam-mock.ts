@@ -106,3 +106,33 @@ export function generateOralExamFeedback({
     isCorrect: false,
   };
 }
+
+// App Store 審査・体験用の問題集。市販の参考書を使わず、この塾で独自に作成した問題だけで構成する。
+// 審査用のゲスト生徒（REVIEW_STUDENT_ID）にはこの問題集だけを割り当てる（db.ts の ensureReviewSampleBook）。
+// 「覚えているかを問う問題」と「解く問題」（求めよ・解け）の両方を含め、反応時間の判定も確認できるようにしている。
+export const reviewSampleBookSeed = {
+  book: {
+    title: "体験用サンプル問題集",
+    subject: "体験用",
+    description:
+      "アプリの使い方を体験するための、滝原塾オリジナルの一問一答です。覚えているかを問う問題と、その場で解く問題が含まれています。",
+  },
+  questions: [
+    { category: "生物", prompt: "血液中で酸素を運ぶ、赤血球に含まれるタンパク質は何ですか。", modelAnswer: "ヘモグロビン" },
+    { category: "生物", prompt: "ヒトの体細胞1つに含まれる染色体は何本ですか。", modelAnswer: "46本" },
+    { category: "生物", prompt: "DNAの塩基のうち、アデニンと対になる塩基は何ですか。", modelAnswer: "チミン" },
+    { category: "生物", prompt: "血糖値を下げるはたらきをもつ、すい臓から分泌されるホルモンは何ですか。", modelAnswer: "インスリン" },
+    { category: "化学", prompt: "原子番号6の元素は何ですか。", modelAnswer: "炭素（C）" },
+    { category: "化学", prompt: "25℃で水溶液のpHが7より小さいとき、その水溶液は何性ですか。", modelAnswer: "酸性" },
+    { category: "化学", prompt: "物質1molあたりに含まれる粒子の数を表す定数を何といいますか。", modelAnswer: "アボガドロ定数（約6.0×10²³/mol）" },
+    { category: "物理", prompt: "力の単位ニュートン（N）を、kg・m・sを使って表すとどうなりますか。", modelAnswer: "kg·m/s²" },
+    { category: "英語", prompt: "「diagnosis」の意味を日本語で答えてください。", modelAnswer: "診断" },
+    { category: "英語", prompt: "「symptom」の意味を日本語で答えてください。", modelAnswer: "症状" },
+    { category: "英語", prompt: "「infection」の意味を日本語で答えてください。", modelAnswer: "感染" },
+    { category: "数学", prompt: "2次方程式 x² − 7x + 12 = 0 を解け。", modelAnswer: "x = 3, 4" },
+    { category: "数学", prompt: "等差数列 3, 7, 11, … の第10項を求めよ。", modelAnswer: "39" },
+    { category: "数学", prompt: "関数 f(x) = x³ − 3x の極大値を求めよ。", modelAnswer: "x = −1 のとき極大値 2" },
+    { category: "数学", prompt: "さいころを2回投げるとき、出た目の和が7になる確率を求めよ。", modelAnswer: "1/6" },
+    { category: "化学", prompt: "水18gは何molか。原子量を H = 1、O = 16 として求めよ。", modelAnswer: "1 mol" },
+  ],
+};
