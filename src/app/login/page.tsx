@@ -2,7 +2,7 @@
 
 import { useActionState, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { Eye, EyeOff, Lock, Mail, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,9 +53,14 @@ export default function LoginPage() {
 
       <div className="relative flex w-full max-w-sm flex-col items-center">
         <div className="mb-9 flex flex-col items-center gap-4 text-center">
-          <div className="flex size-11 items-center justify-center rounded-full border border-gold-500/30 bg-gold-500/[0.08]">
-            <ShieldCheck className="size-5 text-gold-400" strokeWidth={1.5} />
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo-vertical.png"
+            alt="滝原塾"
+            width={72}
+            height={72}
+            className="size-[72px] rounded-[22%] shadow-panel"
+          />
           <div>
             <p className="text-eyebrow uppercase tracking-[0.24em] text-gold-400/90">
               滝原塾専用アプリ
