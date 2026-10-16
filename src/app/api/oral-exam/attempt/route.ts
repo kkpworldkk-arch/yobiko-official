@@ -19,6 +19,11 @@ import { resolveStudentIdentity } from "@/lib/student-identity";
 import type { OralExamInputMode } from "@/lib/types";
 
 const OralExamGradeSchema = z.object({
+  transcription: z
+    .string()
+    .describe(
+      "回答が手書き画像の場合、画像から読み取った回答をそのまま文字に起こしたもの（数式は x^2、√、分数は a/b のように1行で表す）。判読できない箇所は［?］とする。手書きでない場合は空文字",
+    ),
   isCorrect: z
     .boolean()
     .describe(
@@ -37,7 +42,10 @@ const SYSTEM_PROMPT = `あなたは個別指導塾「滝原塾」で、生徒が
 方針:
 - 模範解答が与えられている場合は、その要点を回答が満たしているかどうかで isCorrect を判定してください。表現の違いは許容し、要点が伝わっていれば正解としてください。
 - 模範解答が与えられていない場合は、質問の意図に対して具体的で一貫した回答ができていれば正解としてください。
-- 回答が手書き画像として与えられる場合は、その内容を読み取ったうえで評価してください。
+- 回答が手書き画像として与えられる場合は、まず画像全体を丁寧に読み取り、transcription に書き起こしてから評価してください。
+  - 生徒が手早く書いた字です。崩れた字・つながった字は、質問と模範解答の文脈から最も自然な読み方を選んでください（例: 化学式の下付き数字、数式の指数・分数・根号、英単語のつづり）。
+  - 線で消された部分・塗りつぶされた部分は、書き直す前の跡なので回答に含めないでください。
+  - 読み取りの不確かさだけを理由に不正解にしないでください。ただし、明らかに違う内容が書かれている場合は不正解としてください。
 - 改善点は精神論ではなく、次回すぐに実行できる具体的な言い回し・覚え方の改善を提案してください。
 - 丁寧で温かみのある言葉遣いを保ちながら、判定基準は甘くしすぎないでください。`;
 
@@ -110,6 +118,7 @@ export async function POST(request: NextRequest) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   const aiConfigured = Boolean(apiKey);
   let graded: {
+    transcription?: string;
     isCorrect: boolean;
     evaluation: string;
     strengths: string[];
@@ -134,6 +143,7 @@ export async function POST(request: NextRequest) {
         }`,
         answerText && `生徒の回答:\n${answerText}`,
         answerImageDataUrl && !answerText && "生徒の回答は添付の手書き画像を参照してください。",
+        !answerImageDataUrl && "（手書きではないため transcription は空文字にしてください）",
       ].filter(Boolean) as string[];
 
       const userContent: Array<
@@ -163,13 +173,14 @@ export async function POST(request: NextRequest) {
       }
 
       // 採点は模範解答との照合が中心の定型タスクのため、Sonnet + effort low で速度を優先する。
+      // 手書きは崩れた字の読み取りで誤りやすいので、そのときだけ effort を上げて丁寧に読ませる。
       // 思考トークンも max_tokens に含まれるので、JSONが途中で切れないよう余裕を持たせている。
       const message = await client.messages.parse({
         model: "claude-sonnet-5-5",
-        max_tokens: 4096,
+        max_tokens: imageMatch ? 8192 : 4096,
         output_config: {
           format: zodOutputFormat(OralExamGradeSchema),
-          effort: "low",
+          effort: imageMatch ? "medium" : "low",
         },
         system: SYSTEM_PROMPT,
         messages: [{ role: "user", content: userContent }],
@@ -225,7 +236,8 @@ export async function POST(request: NextRequest) {
     category: question.category,
     questionPrompt: question.prompt,
     inputMode,
-    answerText,
+    // 手書きのときは、AIが読み取った文字を回答テキストとして残す（講師・生徒が誤読に気づけるように）。
+    answerText: answerText || (answerImageDataUrl ? graded.transcription?.trim() ?? "" : ""),
     answerImageDataUrl,
     responseTimeMs,
     isCorrect: graded.isCorrect,

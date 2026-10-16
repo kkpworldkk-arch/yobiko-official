@@ -5,7 +5,6 @@ import {
   ArrowRight,
   CheckCircle2,
   ChevronDown,
-  Eraser,
   Keyboard,
   Loader2,
   Mic,
@@ -22,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { HandwritingPad, type HandwritingPadHandle } from "@/components/oral-exam/handwriting-pad";
 import {
   Select,
   SelectContent,
@@ -216,9 +216,7 @@ export default function OralExamPage() {
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const stopNativeSpeechRef = useRef<(() => void) | null>(null);
 
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const isDrawingRef = useRef(false);
-  const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+  const handwritingRef = useRef<HandwritingPadHandle | null>(null);
   const [hasDrawing, setHasDrawing] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -331,7 +329,7 @@ export default function OralExamPage() {
     setIsFlagging(false);
     setFlagDone(false);
     if (isRecording) stopRecording();
-    if (canvasRef.current) clearCanvas();
+    handwritingRef.current?.clear();
   }
 
   async function submitFlag() {
@@ -429,69 +427,6 @@ export default function OralExamPage() {
     setIsRecording(false);
   }
 
-  const handleCanvasRef = useCallback((node: HTMLCanvasElement | null) => {
-    canvasRef.current = node;
-    if (!node) return;
-    const ratio = window.devicePixelRatio || 1;
-    const rect = node.getBoundingClientRect();
-    node.width = rect.width * ratio;
-    node.height = rect.height * ratio;
-    const ctx = node.getContext("2d");
-    if (!ctx) return;
-    ctx.scale(ratio, ratio);
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.strokeStyle = "#151b2e";
-    ctx.lineWidth = 2.5;
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, rect.width, rect.height);
-  }, []);
-
-  function pointFromEvent(e: React.PointerEvent<HTMLCanvasElement>) {
-    const rect = e.currentTarget.getBoundingClientRect();
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
-  }
-
-  function handlePointerDown(e: React.PointerEvent<HTMLCanvasElement>) {
-    markFirstInput();
-    e.currentTarget.setPointerCapture(e.pointerId);
-    isDrawingRef.current = true;
-    lastPointRef.current = pointFromEvent(e);
-  }
-
-  function handlePointerMove(e: React.PointerEvent<HTMLCanvasElement>) {
-    if (!isDrawingRef.current) return;
-    const ctx = canvasRef.current?.getContext("2d");
-    if (!ctx || !lastPointRef.current) return;
-    const point = pointFromEvent(e);
-    ctx.beginPath();
-    ctx.moveTo(lastPointRef.current.x, lastPointRef.current.y);
-    ctx.lineTo(point.x, point.y);
-    ctx.stroke();
-    lastPointRef.current = point;
-    if (!hasDrawing) setHasDrawing(true);
-  }
-
-  function handlePointerUp(e: React.PointerEvent<HTMLCanvasElement>) {
-    isDrawingRef.current = false;
-    lastPointRef.current = null;
-    e.currentTarget.releasePointerCapture(e.pointerId);
-  }
-
-  function clearCanvas() {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx) return;
-    const ratio = window.devicePixelRatio || 1;
-    ctx.save();
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.restore();
-    ctx.scale(ratio, ratio);
-    setHasDrawing(false);
-  }
-
   async function startSession() {
     if (!selectedBookId) return;
     setStage("loading");
@@ -544,7 +479,7 @@ export default function OralExamPage() {
 
     const responseTimeMs = measureResponseTimeMs(currentQuestion.kind);
     const answerImageDataUrl =
-      activeMode === "handwriting" ? canvasRef.current?.toDataURL("image/png") : undefined;
+      activeMode === "handwriting" ? handwritingRef.current?.exportImage() : undefined;
 
     try {
       const res = await fetch("/api/oral-exam/attempt", {
@@ -906,26 +841,14 @@ export default function OralExamPage() {
                       </div>
                     </TabsContent>
 
-                    <TabsContent value="handwriting">
-                      <div className="flex flex-col gap-3">
-                        <canvas
-                          ref={handleCanvasRef}
-                          onPointerDown={handlePointerDown}
-                          onPointerMove={handlePointerMove}
-                          onPointerUp={handlePointerUp}
-                          onPointerLeave={handlePointerUp}
-                          className="h-56 w-full touch-none rounded-lg border border-white/10"
-                        />
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          onClick={clearCanvas}
-                          className="h-9 w-fit gap-1.5 px-3"
-                        >
-                          <Eraser className="size-3.5" strokeWidth={1.75} />
-                          消して書き直す
-                        </Button>
-                      </div>
+                    {/* 手書きは他のタブに切り替えても書いた内容が消えないよう、常にマウントしておく */}
+                    <TabsContent value="handwriting" keepMounted>
+                      <HandwritingPad
+                        ref={handwritingRef}
+                        prompt={currentQuestion.prompt}
+                        onFirstInput={markFirstInput}
+                        onInkChange={setHasDrawing}
+                      />
                     </TabsContent>
                   </Tabs>
 
@@ -976,6 +899,13 @@ export default function OralExamPage() {
                     </span>
                     <Badge variant="outline">習熟度: {result.mastery.label}</Badge>
                   </div>
+
+                  {result.attempt.inputMode === "handwriting" && result.attempt.answerText && (
+                    <p className="rounded-lg border border-white/[0.05] bg-navy-800/60 px-3.5 py-2.5 text-body-sm text-slate-300">
+                      <span className="text-slate-500">AIの読み取り: </span>
+                      {result.attempt.answerText}
+                    </p>
+                  )}
 
                   <p className="text-body leading-relaxed text-ivory-100">
                     {result.attempt.evaluation}
