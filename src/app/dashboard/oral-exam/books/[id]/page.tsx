@@ -396,6 +396,18 @@ export default function OralExamBookDetailPage({
           )}
           {questions.map((q) => (
             <div key={q.id} className="py-4 first:pt-0 last:pb-0">
+              <p className="mb-1 text-caption font-medium text-gold-400">
+                問題 {q.problemNumber ?? q.orderIndex + 1}{q.subLabel ? ` ${q.subLabel}` : ""}
+                {q.sourcePage ? ` ・ p.${q.sourcePage}` : ""}
+                {q.questionKind ? ` ・ ${q.questionKind}` : ""}
+              </p>
+              {(q.speechText || q.grading.requiredKeywords.length > 0 || q.grading.numericAnswer) && (
+                <p className="mb-2 text-caption text-slate-500">
+                  {q.speechText ? "読み上げ文あり" : ""}
+                  {q.grading.requiredKeywords.length > 0 ? ` ・ 必須: ${q.grading.requiredKeywords.join(" / ")}` : ""}
+                  {q.grading.numericAnswer ? ` ・ 答え: ${q.grading.numericAnswer}` : ""}
+                </p>
+              )}
               {editingQuestionId === q.id ? (
                 <div className="flex flex-col gap-3">
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

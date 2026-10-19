@@ -31,7 +31,8 @@ export type OralExamQuestionKind = "recall" | "solve";
 const SOLVE_SUBJECT_RE = /数学|物理/;
 const SOLVE_PROMPT_RE = /求めよ|求めなさい|計算せよ|計算しなさい|解け|解きなさい|証明せよ|証明しなさい|示せ|示しなさい/;
 
-export function questionKind(question: { prompt: string }, bookSubject: string | null | undefined): OralExamQuestionKind {
+export function questionKind(question: { prompt: string; questionKind?: OralExamQuestionKind | null }, bookSubject: string | null | undefined): OralExamQuestionKind {
+  if (question.questionKind) return question.questionKind;
   if (bookSubject && SOLVE_SUBJECT_RE.test(bookSubject)) return "solve";
   return SOLVE_PROMPT_RE.test(question.prompt) ? "solve" : "recall";
 }

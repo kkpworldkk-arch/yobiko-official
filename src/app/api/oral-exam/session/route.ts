@@ -162,6 +162,9 @@ export async function POST(request: NextRequest) {
   const reviewedItems = await buildQueue(pool);
   const queue = reviewedItems.map((item) => ({
     id: item.question.id,
+    problemNumber: item.question.problemNumber,
+    subLabel: item.question.subLabel,
+    speechText: item.question.speechText,
     category: item.question.category,
     prompt: item.question.prompt,
     kind: questionKind(item.question, book.subject),

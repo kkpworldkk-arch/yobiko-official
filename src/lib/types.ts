@@ -147,12 +147,18 @@ export interface OralExamFilterOptions {
   pages: number[];
   chapters: string[];
   questionCount: number;
+  problemNumbers: number[];
 }
 
 export interface OralExamQuestionRecord {
   id: string;
   bookId: string;
   orderIndex: number;
+  problemNumber: number | null;
+  subLabel: string;
+  questionKind: "recall" | "solve" | null;
+  speechText: string;
+  grading: OralExamGrading;
   sourcePage: number | null;
   category: string;
   prompt: string;
@@ -202,6 +208,8 @@ export interface OralExamAttempt {
   bookTitle: string;
   category: string;
   questionPrompt: string;
+  problemNumber: number | null;
+  subLabel: string;
   inputMode: OralExamInputMode;
   answerText: string;
   answerImageDataUrl: string;
@@ -219,4 +227,12 @@ export interface OralExamAttempt {
 export interface OralExamQueueItem {
   question: OralExamQuestionRecord;
   mastery: OralExamMastery | null;
+}
+
+export interface OralExamGrading {
+  requiredKeywords: string[];
+  acceptedVariants: string[];
+  misconceptions: string[];
+  numericAnswer: string;
+  significantFigures: number | null;
 }

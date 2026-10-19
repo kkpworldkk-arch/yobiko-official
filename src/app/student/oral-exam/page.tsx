@@ -43,6 +43,9 @@ import type {
 
 interface QueueQuestion {
   id: string;
+  problemNumber: number | null;
+  subLabel: string;
+  speechText: string;
   category: string;
   prompt: string;
   kind: OralExamQuestionKind;
@@ -244,7 +247,7 @@ export default function OralExamPage() {
     revealTimeRef.current = performance.now();
     readEndTimeRef.current = null;
     firstInputTimeRef.current = null;
-    speak(question.prompt, () => {
+    speak(question.speechText || question.prompt, () => {
       if (readEndTimeRef.current === null) readEndTimeRef.current = performance.now();
     });
   }
@@ -616,10 +619,10 @@ export default function OralExamPage() {
                 <RangeSelect
                   label="問題番号"
                   allLabel="全問題"
-                  options={Array.from({ length: selectedFilterOptions.questionCount }, (_, index) => ({
-                    value: String(index + 1),
-                    label: `問${index + 1}`,
-                  }))}
+                  options={(selectedFilterOptions.problemNumbers.length > 0
+                    ? selectedFilterOptions.problemNumbers
+                    : Array.from({ length: selectedFilterOptions.questionCount }, (_, index) => index + 1)
+                  ).map((number) => ({ value: String(number), label: `問${number}` }))}
                   start={filters.questionStart}
                   end={filters.questionEnd}
                   onChange={(questionStart, questionEnd) => setFilters((current) => ({ ...current, questionStart, questionEnd }))}
@@ -680,6 +683,12 @@ export default function OralExamPage() {
               <div className="mt-3 rounded-lg border border-white/[0.05] bg-navy-800/60 p-4">
                 <div className="flex items-center justify-between gap-2">
                   <Badge variant="outline">{currentQuestion.category || "総合"}</Badge>
+                  {currentQuestion.problemNumber !== null && (
+                    <span className="text-caption text-slate-400">
+                      問題 {currentQuestion.problemNumber}
+                      {currentQuestion.subLabel ? ` ${currentQuestion.subLabel}` : ""}
+                    </span>
+                  )}
                   <div className="flex items-center gap-1.5">
                     {!flagDone && (
                       <Button
@@ -695,7 +704,7 @@ export default function OralExamPage() {
                     <Button
                       type="button"
                       variant="secondary"
-                      onClick={() => speak(currentQuestion.prompt)}
+                      onClick={() => speak(currentQuestion.speechText || currentQuestion.prompt)}
                       className="h-8 gap-1.5 px-2.5 text-caption"
                     >
                       <Volume2 className="size-3.5" strokeWidth={1.75} />
@@ -1004,6 +1013,7 @@ export default function OralExamPage() {
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-caption font-medium uppercase tracking-[0.1em] text-gold-400/80">
                         {entry.bookTitle}
+                        {entry.problemNumber !== null ? ` ・ 問題 ${entry.problemNumber}${entry.subLabel ? ` ${entry.subLabel}` : ""}` : ""}
                         {entry.category ? ` ・ ${entry.category}` : ""}
                       </span>
                       <div className="flex shrink-0 items-center gap-2">

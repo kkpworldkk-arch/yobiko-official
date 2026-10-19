@@ -42,6 +42,10 @@ const SYSTEM_PROMPT = `あなたは個別指導塾「滝原塾」で、生徒が
 方針:
 - 模範解答が与えられている場合は、その要点を回答が満たしているかどうかで isCorrect を判定してください。表現の違いは許容し、要点が伝わっていれば正解としてください。
 - 模範解答が与えられていない場合は、質問の意図に対して具体的で一貫した回答ができていれば正解としてください。
+- 採点基準が与えられている場合、必須キーワードが欠けていれば不正解にしてください。ただし、同じ意味の言い換えは認めてください。
+- 誤概念に当てはまる回答は不正解とし、改善点でその誤りを具体的に指摘してください。
+- 計算問題は、正しい数値と単位の両方が合っていれば正解です。0.5 と 5.0×10^-1、mol/L と mol·L^-1 のような表記違いは認めますが、単位が無い・違う場合は不正解です。
+- 有効数字の指定がある場合、桁数違いだけなら正解にできますが、改善点で指摘してください。
 - 回答が手書き画像として与えられる場合は、まず画像全体を丁寧に読み取り、transcription に書き起こしてから評価してください。
   - 生徒が手早く書いた字です。崩れた字・つながった字は、質問と模範解答の文脈から最も自然な読み方を選んでください（例: 化学式の下付き数字、数式の指数・分数・根号、英単語のつづり）。
   - 線で消された部分・塗りつぶされた部分は、書き直す前の跡なので回答に含めないでください。
@@ -134,6 +138,11 @@ export async function POST(request: NextRequest) {
         question.category && `カテゴリ: ${question.category}`,
         `質問: ${question.prompt}`,
         question.modelAnswer && `模範解答（要点）:\n${question.modelAnswer}`,
+        question.grading.requiredKeywords.length > 0 && `必須キーワード: ${question.grading.requiredKeywords.join(" / ")}`,
+        question.grading.acceptedVariants.length > 0 && `正解として認める言い換え: ${question.grading.acceptedVariants.join(" / ")}`,
+        question.grading.misconceptions.length > 0 && `不正解にすべき誤概念: ${question.grading.misconceptions.join(" / ")}`,
+        question.grading.numericAnswer && `正しい数値と単位: ${question.grading.numericAnswer}`,
+        question.grading.significantFigures !== null && `指定された有効数字: ${question.grading.significantFigures}桁`,
         `回答形式: ${
           inputMode === "voice"
             ? "音声入力（文字起こし）"
@@ -235,6 +244,8 @@ export async function POST(request: NextRequest) {
     bookTitle: book?.title ?? "",
     category: question.category,
     questionPrompt: question.prompt,
+    problemNumber: question.problemNumber,
+    subLabel: question.subLabel,
     inputMode,
     // 手書きのときは、AIが読み取った文字を回答テキストとして残す（講師・生徒が誤読に気づけるように）。
     answerText: answerText || (answerImageDataUrl ? graded.transcription?.trim() ?? "" : ""),

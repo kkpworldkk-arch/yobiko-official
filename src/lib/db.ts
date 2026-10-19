@@ -7,6 +7,7 @@ import { demoStudent, demoStudentQaHistory, students } from "@/lib/mock-data";
 import { demoOralExamBookSeed, reviewSampleBookSeed } from "@/lib/oral-exam-mock";
 import { isDue } from "@/lib/oral-exam-mastery";
 import { REFERENCE_BOOK_CATALOG } from "@/lib/reference-book-catalog";
+import knownProblemNumbers from "@/lib/oral-exam-problem-numbers.json";
 import type {
   Attachment,
   ExamWeaknessReport,
@@ -19,6 +20,7 @@ import type {
   OralExamMastery,
   OralExamQuestionRecord,
   OralExamQueueItem,
+  OralExamGrading,
   OralExamSession,
   MasteryResult,
   ProspectAssessment,
@@ -253,6 +255,37 @@ db.exec(`
 ensureColumn("oral_exam_questions", "reviewed_at", "reviewed_at TEXT");
 ensureColumn("oral_exam_questions", "blocked", "blocked INTEGER NOT NULL DEFAULT 0");
 ensureColumn("oral_exam_questions", "source_page", "source_page INTEGER");
+ensureColumn("oral_exam_questions", "problem_number", "problem_number INTEGER");
+ensureColumn("oral_exam_questions", "sub_label", "sub_label TEXT NOT NULL DEFAULT ''");
+ensureColumn("oral_exam_questions", "question_kind", "question_kind TEXT NOT NULL DEFAULT ''");
+ensureColumn("oral_exam_questions", "speech_text", "speech_text TEXT NOT NULL DEFAULT ''");
+ensureColumn("oral_exam_questions", "grading_json", "grading_json TEXT NOT NULL DEFAULT ''");
+
+// 本の問題番号を保存していなかった頃に取り込んだ参考書（黄チャート・システム英単語）へ、
+// 照合済みの対応表（scripts/generate-problem-numbers.py で生成）から番号を入れる。
+// 番号が空の問題だけを埋めるので、講師が後から付けた番号や、番号付きで取り込んだ問題は上書きしない。
+function backfillKnownProblemNumbers() {
+  const pending = db
+    .prepare("SELECT COUNT(*) AS n FROM oral_exam_questions WHERE problem_number IS NULL")
+    .get() as { n: number };
+  if (pending.n === 0) return;
+  const update = db.prepare(
+    "UPDATE oral_exam_questions SET problem_number = ?, sub_label = ? WHERE id = ? AND problem_number IS NULL",
+  );
+  db.exec("BEGIN");
+  try {
+    for (const [id, [problemNumber, subLabel]] of Object.entries(
+      knownProblemNumbers as unknown as Record<string, [number, string]>,
+    )) {
+      update.run(problemNumber, subLabel, id);
+    }
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
+}
+backfillKnownProblemNumbers();
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS oral_exam_assignments (
@@ -300,6 +333,8 @@ db.exec(`
     created_at TEXT NOT NULL
   )
 `);
+ensureColumn("oral_exam_attempts", "problem_number", "problem_number INTEGER");
+ensureColumn("oral_exam_attempts", "sub_label", "sub_label TEXT NOT NULL DEFAULT ''");
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS oral_exam_mastery (
@@ -1002,6 +1037,11 @@ interface OralExamQuestionRow {
   id: string;
   book_id: string;
   order_index: number;
+  problem_number: number | null;
+  sub_label: string;
+  question_kind: string;
+  speech_text: string;
+  grading_json: string;
   source_page: number | null;
   category: string;
   prompt: string;
@@ -1011,11 +1051,34 @@ interface OralExamQuestionRow {
   blocked: number;
 }
 
+function emptyOralExamGrading(): OralExamGrading {
+  return { requiredKeywords: [], acceptedVariants: [], misconceptions: [], numericAnswer: "", significantFigures: null };
+}
+
+function parseOralExamGrading(value: string | null | undefined): OralExamGrading {
+  if (!value) return emptyOralExamGrading();
+  try {
+    const parsed = JSON.parse(value) as Partial<OralExamGrading>;
+    return {
+      requiredKeywords: Array.isArray(parsed.requiredKeywords) ? parsed.requiredKeywords.filter((v): v is string => typeof v === "string") : [],
+      acceptedVariants: Array.isArray(parsed.acceptedVariants) ? parsed.acceptedVariants.filter((v): v is string => typeof v === "string") : [],
+      misconceptions: Array.isArray(parsed.misconceptions) ? parsed.misconceptions.filter((v): v is string => typeof v === "string") : [],
+      numericAnswer: typeof parsed.numericAnswer === "string" ? parsed.numericAnswer : "",
+      significantFigures: typeof parsed.significantFigures === "number" ? parsed.significantFigures : null,
+    };
+  } catch { return emptyOralExamGrading(); }
+}
+
 function questionRowToRecord(row: OralExamQuestionRow): OralExamQuestionRecord {
   return {
     id: row.id,
     bookId: row.book_id,
     orderIndex: row.order_index,
+    problemNumber: row.problem_number ?? null,
+    subLabel: row.sub_label ?? "",
+    questionKind: row.question_kind === "recall" || row.question_kind === "solve" ? row.question_kind : null,
+    speechText: row.speech_text ?? "",
+    grading: parseOralExamGrading(row.grading_json),
     sourcePage: row.source_page,
     category: row.category,
     prompt: row.prompt,
@@ -1040,7 +1103,9 @@ export function getOralExamFilterOptions(bookId: string): OralExamFilterOptions 
   const pages = new Set<number>();
   // 章は五十音順ではなく参考書の掲載順（最初に出てくる問題の順）で並べる。範囲指定の「〜」が本の順序と一致するように。
   const chapters = new Set<string>();
+  const problemNumbers = new Set<number>();
   for (const question of questions) {
+    if (question.problemNumber !== null) problemNumbers.add(question.problemNumber);
     if (question.sourcePage) pages.add(question.sourcePage);
     const pageMatch = /(?:p\.?|ページ)\s*(\d+)/i.exec(question.category);
     if (pageMatch) pages.add(Number(pageMatch[1]));
@@ -1050,6 +1115,7 @@ export function getOralExamFilterOptions(bookId: string): OralExamFilterOptions 
     pages: [...pages].sort((a, b) => a - b),
     chapters: [...chapters],
     questionCount: questions.length,
+    problemNumbers: [...problemNumbers].sort((a, b) => a - b),
   };
 }
 
@@ -1071,19 +1137,24 @@ function nextOralExamOrderIndex(bookId: string): number {
 
 export function addOralExamQuestion(
   bookId: string,
-  input: { category: string; prompt: string; modelAnswer: string; sourcePage?: number | null },
+  input: { category: string; prompt: string; modelAnswer: string; sourcePage?: number | null; problemNumber?: number | null; subLabel?: string; questionKind?: string; speechText?: string; grading?: OralExamGrading },
 ): OralExamQuestionRecord {
   const id = randomUUID();
   const createdAt = new Date().toISOString();
   const orderIndex = nextOralExamOrderIndex(bookId);
   db.prepare(
-     `INSERT INTO oral_exam_questions (id, book_id, order_index, category, prompt, model_answer, created_at, source_page)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    ).run(id, bookId, orderIndex, input.category, input.prompt, input.modelAnswer, createdAt, input.sourcePage ?? null);
+     `INSERT INTO oral_exam_questions (id, book_id, order_index, problem_number, sub_label, question_kind, speech_text, grading_json, category, prompt, model_answer, created_at, source_page)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(id, bookId, orderIndex, input.problemNumber ?? null, input.subLabel ?? "", input.questionKind ?? "", input.speechText ?? "", JSON.stringify(input.grading ?? emptyOralExamGrading()), input.category, input.prompt, input.modelAnswer, createdAt, input.sourcePage ?? null);
   return {
     id,
     bookId,
     orderIndex,
+    problemNumber: input.problemNumber ?? null,
+    subLabel: input.subLabel ?? "",
+    questionKind: input.questionKind === "recall" || input.questionKind === "solve" ? input.questionKind : null,
+    speechText: input.speechText ?? "",
+    grading: input.grading ?? emptyOralExamGrading(),
     sourcePage: input.sourcePage ?? null,
     category: input.category,
     prompt: input.prompt,
@@ -1295,7 +1366,7 @@ function pageFromQuestion(item: OralExamQueueItem): number | null {
 }
 
 function matchesOralExamFilters(item: OralExamQueueItem, filters: OralExamQuestionFilters): boolean {
-  const questionNumber = item.question.orderIndex + 1;
+  const questionNumber = item.question.problemNumber ?? item.question.orderIndex + 1;
   if (filters.questionStart && questionNumber < filters.questionStart) return false;
   if (filters.questionEnd && questionNumber > filters.questionEnd) return false;
   if (filters.chapters && filters.chapters.length > 0 && !filters.chapters.includes(item.question.category.trim())) {
@@ -1389,6 +1460,8 @@ interface OralExamAttemptRow {
   book_title: string;
   category: string;
   question_prompt: string;
+  problem_number: number | null;
+  sub_label: string;
   input_mode: string;
   answer_text: string;
   answer_image_data_url: string;
@@ -1413,6 +1486,8 @@ function attemptRowToRecord(row: OralExamAttemptRow): OralExamAttempt {
     bookTitle: row.book_title,
     category: row.category,
     questionPrompt: row.question_prompt,
+    problemNumber: row.problem_number ?? null,
+    subLabel: row.sub_label ?? "",
     inputMode: row.input_mode as OralExamInputMode,
     answerText: row.answer_text,
     answerImageDataUrl: row.answer_image_data_url,
@@ -1435,10 +1510,10 @@ export function insertOralExamAttempt(
   const createdAt = new Date().toISOString();
   db.prepare(
     `INSERT INTO oral_exam_attempts
-       (id, session_id, student_id, question_id, book_id, book_title, category, question_prompt,
+       (id, session_id, student_id, question_id, book_id, book_title, category, question_prompt, problem_number, sub_label,
         input_mode, answer_text, answer_image_data_url, response_time_ms, is_correct, evaluation,
         strengths_json, improvements_json, mastery_level, feedback_source, teacher_comment, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     id,
     input.sessionId,
@@ -1448,6 +1523,8 @@ export function insertOralExamAttempt(
     input.bookTitle,
     input.category,
     input.questionPrompt,
+    input.problemNumber,
+    input.subLabel,
     input.inputMode,
     input.answerText,
     input.answerImageDataUrl,
