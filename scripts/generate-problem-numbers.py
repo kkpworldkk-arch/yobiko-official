@@ -26,10 +26,12 @@ DB_PATH = ROOT / "data" / "app.db"
 IMPORT_DIR = ROOT / "data" / "manual-import"
 OUT_PATH = ROOT / "src" / "lib" / "oral-exam-problem-numbers.json"
 
+# 黄チャートは1冊に2科目が入っていて、例題番号は科目ごとに1から振り直されている。
+# どちらの科目かは取り込み元のファイルで分かれているので、ファイルごとに科目名を付ける。
 MATH_BOOKS = {
-    "黄チャート式 解法と演習 数学1+A": ["yellow-chart-1a-ch*.txt", "yellow-chart-A-*.txt"],
-    "黄チャート式 解法と演習 数学2+B": ["math2b-*.txt"],
-    "黄チャート式 解法と演習 数学3+C": ["math3c-*.txt"],
+    "黄チャート式 解法と演習 数学1+A": [("yellow-chart-1a-ch*.txt", "数学I"), ("yellow-chart-A-*.txt", "数学A")],
+    "黄チャート式 解法と演習 数学2+B": [("math2b-II-*.txt", "数学II"), ("math2b-B-*.txt", "数学B")],
+    "黄チャート式 解法と演習 数学3+C": [("math3c-III-*.txt", "数学III"), ("math3c-C-*.txt", "数学C")],
 }
 EXAMPLE_HEADER_RE = re.compile(r"^\s*(基本|重要|補充|演習)?例題\s*(\d+)\s*(.*)$")
 CATEGORY_EXAMPLE_RE = re.compile(r"(基本|重要|補充|演習)例題\s+(.*)$")
@@ -55,14 +57,14 @@ def sub_label(prompt: str) -> str:
     return f"({labels.pop()})" if len(labels) == 1 else ""
 
 
-def map_math(conn: sqlite3.Connection, title: str, patterns: list[str], out: dict) -> None:
-    numbers: dict[tuple[str, str], set[int]] = collections.defaultdict(set)
-    for pattern in patterns:
+def map_math(conn: sqlite3.Connection, title: str, patterns: list[tuple[str, str]], out: dict) -> None:
+    numbers: dict[tuple[str, str], set[tuple[int, str]]] = collections.defaultdict(set)
+    for pattern, part in patterns:
         for path in IMPORT_DIR.glob(pattern):
             for line in path.read_text(encoding="utf-8").splitlines():
                 header = EXAMPLE_HEADER_RE.match(line.strip())
                 if header and header.group(3):
-                    numbers[(header.group(1) or "", norm(header.group(3)))].add(int(header.group(2)))
+                    numbers[(header.group(1) or "", norm(header.group(3)))].add((int(header.group(2)), part))
 
     rows = conn.execute(
         "SELECT id, category, prompt FROM oral_exam_questions WHERE book_id = ?", (book_id(conn, title),)
@@ -74,7 +76,8 @@ def map_math(conn: sqlite3.Connection, title: str, patterns: list[str], out: dic
         if len(candidates) != 1:
             unmatched += 1
             continue
-        out[qid] = [next(iter(candidates)), sub_label(prompt)]
+        number, part = next(iter(candidates))
+        out[qid] = [number, sub_label(prompt), part]
     print(f"{title}: {len(rows) - unmatched}/{len(rows)} 問に番号を付与")
 
 

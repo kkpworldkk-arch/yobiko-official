@@ -146,8 +146,13 @@ export interface OralExamBook {
 export interface OralExamFilterOptions {
   pages: number[];
   chapters: string[];
+  chapterTypes: Record<string, Record<string, number[]>>;
   questionCount: number;
   problemNumbers: number[];
+  // 種類（生物の「基本問題」、黄チャートの「数学A」など）ごとの問題番号。章をまたいで番号が重複しない本で使う。
+  typeNumbers: Record<string, number[]>;
+  // 番号が章ごとに振り直されていて、番号を選ぶ前に章を選ぶ必要がある本なら true。
+  typesNeedChapter: boolean;
 }
 
 export interface OralExamQuestionRecord {
@@ -156,6 +161,7 @@ export interface OralExamQuestionRecord {
   orderIndex: number;
   problemNumber: number | null;
   subLabel: string;
+  problemType: string;
   questionKind: "recall" | "solve" | null;
   speechText: string;
   grading: OralExamGrading;

@@ -164,6 +164,7 @@ export async function POST(request: NextRequest) {
     id: item.question.id,
     problemNumber: item.question.problemNumber,
     subLabel: item.question.subLabel,
+    problemType: item.question.problemType,
     speechText: item.question.speechText,
     category: item.question.category,
     prompt: item.question.prompt,
@@ -191,6 +192,7 @@ function normalizeFilters(input: OralExamQuestionFilters | undefined): OralExamQ
           .filter(Boolean)
           .slice(0, 500)
       : undefined,
+    problemType: typeof input?.problemType === "string" ? input.problemType.trim().slice(0, 100) || undefined : undefined,
   };
   if (filters.pageStart && filters.pageEnd && filters.pageStart > filters.pageEnd) {
     [filters.pageStart, filters.pageEnd] = [filters.pageEnd, filters.pageStart];

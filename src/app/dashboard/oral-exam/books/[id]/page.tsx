@@ -397,7 +397,7 @@ export default function OralExamBookDetailPage({
           {questions.map((q) => (
             <div key={q.id} className="py-4 first:pt-0 last:pb-0">
               <p className="mb-1 text-caption font-medium text-gold-400">
-                問題 {q.problemNumber ?? q.orderIndex + 1}{q.subLabel ? ` ${q.subLabel}` : ""}
+                {q.problemType ? `${q.category} ${q.problemType} ` : "問題 "}{q.problemNumber ?? q.orderIndex + 1}{q.subLabel ? ` ${q.subLabel}` : ""}
                 {q.sourcePage ? ` ・ p.${q.sourcePage}` : ""}
                 {q.questionKind ? ` ・ ${q.questionKind}` : ""}
               </p>

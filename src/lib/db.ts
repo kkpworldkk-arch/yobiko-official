@@ -260,24 +260,27 @@ ensureColumn("oral_exam_questions", "sub_label", "sub_label TEXT NOT NULL DEFAUL
 ensureColumn("oral_exam_questions", "question_kind", "question_kind TEXT NOT NULL DEFAULT ''");
 ensureColumn("oral_exam_questions", "speech_text", "speech_text TEXT NOT NULL DEFAULT ''");
 ensureColumn("oral_exam_questions", "grading_json", "grading_json TEXT NOT NULL DEFAULT ''");
+ensureColumn("oral_exam_questions", "problem_type", "problem_type TEXT NOT NULL DEFAULT ''");
 
 // 本の問題番号を保存していなかった頃に取り込んだ参考書（黄チャート・システム英単語）へ、
-// 照合済みの対応表（scripts/generate-problem-numbers.py で生成）から番号を入れる。
-// 番号が空の問題だけを埋めるので、講師が後から付けた番号や、番号付きで取り込んだ問題は上書きしない。
+// 照合済みの対応表（scripts/generate-problem-numbers.py で生成）から番号と科目を入れる。
+// 空の欄だけを埋めるので、講師が後から付けた番号や、番号付きで取り込んだ問題は上書きしない。
+// 黄チャートは1冊に2科目（数学I と数学A など）が入り、例題番号が科目ごとに1から始まるため、
+// 科目名を problem_type に入れて「科目 → 番号」で選べるようにしている。
 function backfillKnownProblemNumbers() {
-  const pending = db
-    .prepare("SELECT COUNT(*) AS n FROM oral_exam_questions WHERE problem_number IS NULL")
-    .get() as { n: number };
-  if (pending.n === 0) return;
   const update = db.prepare(
-    "UPDATE oral_exam_questions SET problem_number = ?, sub_label = ? WHERE id = ? AND problem_number IS NULL",
+    `UPDATE oral_exam_questions
+     SET problem_number = COALESCE(problem_number, ?),
+         sub_label = CASE WHEN problem_number IS NULL THEN ? ELSE sub_label END,
+         problem_type = CASE WHEN problem_type = '' THEN ? ELSE problem_type END
+     WHERE id = ? AND (problem_number IS NULL OR (problem_type = '' AND ? <> ''))`,
   );
   db.exec("BEGIN");
   try {
-    for (const [id, [problemNumber, subLabel]] of Object.entries(
-      knownProblemNumbers as unknown as Record<string, [number, string]>,
+    for (const [id, [problemNumber, subLabel, part = ""]] of Object.entries(
+      knownProblemNumbers as unknown as Record<string, [number, string, string?]>,
     )) {
-      update.run(problemNumber, subLabel, id);
+      update.run(problemNumber, subLabel, part, id, part);
     }
     db.exec("COMMIT");
   } catch (error) {
@@ -1039,6 +1042,7 @@ interface OralExamQuestionRow {
   order_index: number;
   problem_number: number | null;
   sub_label: string;
+  problem_type: string;
   question_kind: string;
   speech_text: string;
   grading_json: string;
@@ -1076,6 +1080,7 @@ function questionRowToRecord(row: OralExamQuestionRow): OralExamQuestionRecord {
     orderIndex: row.order_index,
     problemNumber: row.problem_number ?? null,
     subLabel: row.sub_label ?? "",
+    problemType: row.problem_type ?? "",
     questionKind: row.question_kind === "recall" || row.question_kind === "solve" ? row.question_kind : null,
     speechText: row.speech_text ?? "",
     grading: parseOralExamGrading(row.grading_json),
@@ -1104,16 +1109,39 @@ export function getOralExamFilterOptions(bookId: string): OralExamFilterOptions 
   // 章は五十音順ではなく参考書の掲載順（最初に出てくる問題の順）で並べる。範囲指定の「〜」が本の順序と一致するように。
   const chapters = new Set<string>();
   const problemNumbers = new Set<number>();
+  const chapterTypes: Record<string, Record<string, number[]>> = {};
+  const typeNumbers: Record<string, number[]> = {};
+  // 同じ種類・同じ番号が複数の章にあるか。生物（章ごとに番号が1から）は true、黄チャート（科目ごとに通し番号）は false。
+  const typeNumberChapter = new Map<string, string>();
+  let typesNeedChapter = false;
   for (const question of questions) {
     if (question.problemNumber !== null) problemNumbers.add(question.problemNumber);
     if (question.sourcePage) pages.add(question.sourcePage);
     const pageMatch = /(?:p\.?|ページ)\s*(\d+)/i.exec(question.category);
     if (pageMatch) pages.add(Number(pageMatch[1]));
     if (question.category.trim()) chapters.add(question.category.trim());
+    const chapter = question.category.trim();
+    const type = question.problemType.trim();
+    if (chapter && type && question.problemNumber !== null) {
+      chapterTypes[chapter] ??= {};
+      chapterTypes[chapter][type] ??= [];
+      if (!chapterTypes[chapter][type].includes(question.problemNumber)) chapterTypes[chapter][type].push(question.problemNumber);
+    }
+    if (type && question.problemNumber !== null) {
+      typeNumbers[type] ??= [];
+      if (!typeNumbers[type].includes(question.problemNumber)) typeNumbers[type].push(question.problemNumber);
+      const key = `${type}|${question.problemNumber}`;
+      const firstChapter = typeNumberChapter.get(key);
+      if (firstChapter === undefined) typeNumberChapter.set(key, chapter);
+      else if (firstChapter !== chapter) typesNeedChapter = true;
+    }
   }
   return {
     pages: [...pages].sort((a, b) => a - b),
     chapters: [...chapters],
+    chapterTypes: Object.fromEntries(Object.entries(chapterTypes).map(([chapter, types]) => [chapter, Object.fromEntries(Object.entries(types).map(([type, numbers]) => [type, numbers.sort((a, b) => a - b)]))])),
+    typeNumbers: Object.fromEntries(Object.entries(typeNumbers).map(([type, numbers]) => [type, numbers.sort((a, b) => a - b)])),
+    typesNeedChapter,
     questionCount: questions.length,
     problemNumbers: [...problemNumbers].sort((a, b) => a - b),
   };
@@ -1137,21 +1165,22 @@ function nextOralExamOrderIndex(bookId: string): number {
 
 export function addOralExamQuestion(
   bookId: string,
-  input: { category: string; prompt: string; modelAnswer: string; sourcePage?: number | null; problemNumber?: number | null; subLabel?: string; questionKind?: string; speechText?: string; grading?: OralExamGrading },
+  input: { category: string; prompt: string; modelAnswer: string; sourcePage?: number | null; problemNumber?: number | null; subLabel?: string; problemType?: string; questionKind?: string; speechText?: string; grading?: OralExamGrading },
 ): OralExamQuestionRecord {
   const id = randomUUID();
   const createdAt = new Date().toISOString();
   const orderIndex = nextOralExamOrderIndex(bookId);
   db.prepare(
-     `INSERT INTO oral_exam_questions (id, book_id, order_index, problem_number, sub_label, question_kind, speech_text, grading_json, category, prompt, model_answer, created_at, source_page)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    ).run(id, bookId, orderIndex, input.problemNumber ?? null, input.subLabel ?? "", input.questionKind ?? "", input.speechText ?? "", JSON.stringify(input.grading ?? emptyOralExamGrading()), input.category, input.prompt, input.modelAnswer, createdAt, input.sourcePage ?? null);
+     `INSERT INTO oral_exam_questions (id, book_id, order_index, problem_number, sub_label, problem_type, question_kind, speech_text, grading_json, category, prompt, model_answer, created_at, source_page)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(id, bookId, orderIndex, input.problemNumber ?? null, input.subLabel ?? "", input.problemType ?? "", input.questionKind ?? "", input.speechText ?? "", JSON.stringify(input.grading ?? emptyOralExamGrading()), input.category, input.prompt, input.modelAnswer, createdAt, input.sourcePage ?? null);
   return {
     id,
     bookId,
     orderIndex,
     problemNumber: input.problemNumber ?? null,
     subLabel: input.subLabel ?? "",
+    problemType: input.problemType ?? "",
     questionKind: input.questionKind === "recall" || input.questionKind === "solve" ? input.questionKind : null,
     speechText: input.speechText ?? "",
     grading: input.grading ?? emptyOralExamGrading(),
@@ -1357,6 +1386,7 @@ export interface OralExamQuestionFilters {
   questionEnd?: number;
   // 出題対象の章・カテゴリ名（完全一致）。範囲指定は画面側で章リストを切り出して渡す。
   chapters?: string[];
+  problemType?: string;
 }
 
 function pageFromQuestion(item: OralExamQueueItem): number | null {
@@ -1372,6 +1402,7 @@ function matchesOralExamFilters(item: OralExamQueueItem, filters: OralExamQuesti
   if (filters.chapters && filters.chapters.length > 0 && !filters.chapters.includes(item.question.category.trim())) {
     return false;
   }
+  if (filters.problemType && filters.problemType !== item.question.problemType) return false;
   if (filters.pageStart || filters.pageEnd) {
     const page = pageFromQuestion(item);
     if (page === null) return false;

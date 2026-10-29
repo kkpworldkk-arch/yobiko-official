@@ -45,6 +45,7 @@ interface QueueQuestion {
   id: string;
   problemNumber: number | null;
   subLabel: string;
+  problemType: string;
   speechText: string;
   category: string;
   prompt: string;
@@ -203,6 +204,7 @@ export default function OralExamPage() {
     questionEnd: "",
     chapterStart: "",
     chapterEnd: "",
+    problemType: "",
   });
   const [stage, setStage] = useState<Stage>("loading");
 
@@ -445,7 +447,11 @@ export default function OralExamPage() {
             pageEnd: filters.pageEnd ? Number(filters.pageEnd) : undefined,
             questionStart: filters.questionStart ? Number(filters.questionStart) : undefined,
             questionEnd: filters.questionEnd ? Number(filters.questionEnd) : undefined,
-            chapters: chapterRange(filterOptions[selectedBookId]?.chapters ?? [], filters.chapterStart, filters.chapterEnd),
+            // 章ごとに番号が振り直される本（生物）では、章を1つだけ選ぶ形なので、その章だけに絞る。
+            chapters: typesNeedChapter && filters.chapterStart
+              ? [filters.chapterStart]
+              : chapterRange(filterOptions[selectedBookId]?.chapters ?? [], filters.chapterStart, filters.chapterEnd),
+            problemType: filters.problemType || undefined,
           },
         }),
       });
@@ -525,6 +531,25 @@ export default function OralExamPage() {
 
   const selectedBook = books.find((b) => b.id === selectedBookId) ?? null;
   const selectedFilterOptions = filterOptions[selectedBookId];
+  const hasProblemTypes = Object.keys(selectedFilterOptions?.typeNumbers ?? {}).length > 0;
+  const typesNeedChapter = selectedFilterOptions?.typesNeedChapter ?? false;
+  const problemTypeOptions = !selectedFilterOptions
+    ? []
+    : typesNeedChapter
+      ? Object.keys(selectedFilterOptions.chapterTypes[filters.chapterStart] ?? {})
+      : Object.keys(selectedFilterOptions.typeNumbers);
+  // 番号の選択肢は、選んだ章・種類（科目）に実在する番号だけにする。種類の無い本は今までどおり。
+  const numberOptions: number[] = !selectedFilterOptions
+    ? []
+    : !hasProblemTypes
+      ? selectedFilterOptions.problemNumbers.length > 0
+        ? selectedFilterOptions.problemNumbers
+        : Array.from({ length: selectedFilterOptions.questionCount }, (_, index) => index + 1)
+      : !filters.problemType
+        ? []
+        : typesNeedChapter
+          ? selectedFilterOptions.chapterTypes[filters.chapterStart]?.[filters.problemType] ?? []
+          : selectedFilterOptions.typeNumbers[filters.problemType] ?? [];
   const correctCount = sessionLog.filter((r) => r.attempt.isCorrect).length;
 
   return (
@@ -565,7 +590,7 @@ export default function OralExamPage() {
                 value={selectedBookId}
                 onValueChange={(v) => {
                   setSelectedBookId(v as string);
-                  setFilters({ pageStart: "", pageEnd: "", questionStart: "", questionEnd: "", chapterStart: "", chapterEnd: "" });
+                  setFilters({ pageStart: "", pageEnd: "", questionStart: "", questionEnd: "", chapterStart: "", chapterEnd: "", problemType: "" });
                   setStage("idle");
                 }}
               >
@@ -605,6 +630,22 @@ export default function OralExamPage() {
           <div className="mt-5 border-t border-white/[0.06] pt-5">
             <p className="text-caption text-slate-400">出題範囲</p>
             <div className="mt-2 flex flex-col gap-4">
+              {/* 種類のある本：生物は「章 → 種類 → 番号」、黄チャートは「科目 → 番号」（番号が章をまたいで重複しないため章は不要） */}
+              {hasProblemTypes && typesNeedChapter && (
+                <Select value={filters.chapterStart || "__all__"} onValueChange={(value) => setFilters((current) => ({ ...current, chapterStart: value === "__all__" ? "" : (value ?? ""), chapterEnd: "", problemType: "", questionStart: "", questionEnd: "" }))}>
+                  <SelectTrigger><SelectValue placeholder="章を選択" /></SelectTrigger>
+                  <SelectContent><SelectItem value="__all__">すべての章</SelectItem>{selectedFilterOptions.chapters.filter((chapter) => selectedFilterOptions.chapterTypes[chapter]).map((chapter) => <SelectItem key={chapter} value={chapter}>{chapter}</SelectItem>)}</SelectContent>
+                </Select>
+              )}
+              {hasProblemTypes && (!typesNeedChapter || filters.chapterStart) && (
+                <Select value={filters.problemType || "__all__"} onValueChange={(value) => setFilters((current) => ({ ...current, problemType: value === "__all__" ? "" : (value ?? ""), questionStart: "", questionEnd: "" }))}>
+                  <SelectTrigger><SelectValue placeholder={typesNeedChapter ? "種類を選択" : "科目を選択"} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">{typesNeedChapter ? "すべての種類" : "すべての科目"}</SelectItem>
+                    {problemTypeOptions.map((type) => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              )}
               {selectedFilterOptions && selectedFilterOptions.pages.length > 0 && (
                 <RangeSelect
                   label="ページ"
@@ -615,18 +656,20 @@ export default function OralExamPage() {
                   onChange={(pageStart, pageEnd) => setFilters((current) => ({ ...current, pageStart, pageEnd }))}
                 />
               )}
-              {selectedFilterOptions && selectedFilterOptions.questionCount > 0 && (
+              {selectedFilterOptions && selectedFilterOptions.questionCount > 0 && (!hasProblemTypes || numberOptions.length > 0) && (
                 <RangeSelect
                   label="問題番号"
                   allLabel="全問題"
-                  options={(selectedFilterOptions.problemNumbers.length > 0
-                    ? selectedFilterOptions.problemNumbers
-                    : Array.from({ length: selectedFilterOptions.questionCount }, (_, index) => index + 1)
-                  ).map((number) => ({ value: String(number), label: `問${number}` }))}
+                  options={numberOptions.map((number) => ({ value: String(number), label: `問${number}` }))}
                   start={filters.questionStart}
                   end={filters.questionEnd}
                   onChange={(questionStart, questionEnd) => setFilters((current) => ({ ...current, questionStart, questionEnd }))}
                 />
+              )}
+              {hasProblemTypes && numberOptions.length === 0 && (
+                <p className="text-caption text-slate-500">
+                  {typesNeedChapter ? "問題番号で選ぶときは、章と種類を選んでください。" : "問題番号で選ぶときは、科目を選んでください。"}
+                </p>
               )}
               {selectedFilterOptions && selectedFilterOptions.chapters.length > 0 && (
                 <RangeSelect
@@ -685,7 +728,7 @@ export default function OralExamPage() {
                   <Badge variant="outline">{currentQuestion.category || "総合"}</Badge>
                   {currentQuestion.problemNumber !== null && (
                     <span className="text-caption text-slate-400">
-                      問題 {currentQuestion.problemNumber}
+                      {currentQuestion.problemType ? `${currentQuestion.problemType} ` : "問題 "}{currentQuestion.problemNumber}
                       {currentQuestion.subLabel ? ` ${currentQuestion.subLabel}` : ""}
                     </span>
                   )}
