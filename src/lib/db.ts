@@ -1776,6 +1776,19 @@ export function getStudentFeedbackForUser(userId: string): StudentFeedback[] {
   return rows.map(feedbackRowToRecord);
 }
 
+export function getStudentFeedbackForStudent(studentId: string): StudentFeedback[] {
+  const rows = db
+    .prepare(
+      `SELECT f.*
+       FROM student_feedback f
+       INNER JOIN students s ON s.user_id = f.user_id
+       WHERE s.id = ?
+       ORDER BY f.created_at DESC`,
+    )
+    .all(studentId) as unknown as StudentFeedbackRow[];
+  return rows.map(feedbackRowToRecord);
+}
+
 export function setStudentFeedbackResolved(id: string, resolved: boolean): void {
   db.prepare("UPDATE student_feedback SET resolved = ? WHERE id = ?").run(resolved ? 1 : 0, id);
 }

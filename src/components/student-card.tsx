@@ -1,4 +1,5 @@
 import { Clock3, GraduationCap, MessageCircleQuestion } from "lucide-react";
+import Link from "next/link";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { StatusBadge } from "@/components/status-badge";
 import { cn } from "@/lib/utils";
@@ -8,11 +9,13 @@ export function StudentCard({ student }: { student: Student }) {
   const hasPendingChecks = student.pendingTeacherChecks > 0;
 
   return (
-    <article
+    <Link
+      href={`/dashboard/students/${student.id}`}
       className={cn(
         "group flex flex-col gap-5 rounded-xl border border-border bg-card p-5",
         "shadow-panel transition-all duration-400 ease-luxury",
         "hover:-translate-y-0.5 hover:border-gold-500/25 hover:shadow-panel-lg",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/70",
       )}
     >
       <header className="flex items-start justify-between gap-3">
@@ -69,6 +72,6 @@ export function StudentCard({ student }: { student: Student }) {
           </span>
         )}
       </footer>
-    </article>
+    </Link>
   );
 }

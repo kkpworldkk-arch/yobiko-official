@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Paperclip, Search } from "lucide-react";
 import {
   Select,
@@ -16,15 +16,28 @@ import type { QaHistoryEntry } from "@/lib/types";
 
 export default function DashboardHistoryPage() {
   const [history, setHistory] = useState<QaHistoryEntry[]>([]);
+  const [historyStudentName, setHistoryStudentName] = useState(demoStudent.name);
+  const studentIdRef = useRef(demoStudent.id);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("");
   const [resolvingId, setResolvingId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`/api/tutor?studentId=${demoStudent.id}`)
-      .then((res) => res.json())
-      .then((data) => setHistory(data.history ?? []))
+    const requestedStudentId =
+      new URLSearchParams(window.location.search).get("studentId") ?? demoStudent.id;
+    studentIdRef.current = requestedStudentId;
+    Promise.all([
+      fetch(`/api/tutor?studentId=${encodeURIComponent(requestedStudentId)}`).then((res) => res.json()),
+      fetch("/api/students").then((res) => res.json()),
+    ])
+      .then(([historyData, studentsData]) => {
+        setHistory(historyData.history ?? []);
+        const selectedStudent = (studentsData.students ?? []).find(
+          (student: { id: string }) => student.id === requestedStudentId,
+        );
+        if (selectedStudent?.name) setHistoryStudentName(selectedStudent.name);
+      })
       .catch(() => setHistory([]))
       .finally(() => setIsLoading(false));
   }, []);
@@ -35,7 +48,7 @@ export default function DashboardHistoryPage() {
       await fetch("/api/tutor", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, studentId: demoStudent.id }),
+        body: JSON.stringify({ id, studentId: studentIdRef.current }),
       });
       setHistory((prev) =>
         prev.map((entry) =>
@@ -73,7 +86,7 @@ export default function DashboardHistoryPage() {
       <div>
         <h1 className="text-h1 text-ivory-100">質問履歴</h1>
         <p className="mt-1 text-body-sm text-slate-400">
-          {demoStudent.name}様の質問記録です（実データ）。講師確認が必要な質問は「対応済みにする」で処理できます。
+          {historyStudentName}様の質問記録です（実データ）。講師確認が必要な質問は「対応済みにする」で処理できます。
           {unresolvedCount > 0 && (
             <span className="ml-1 text-crimson-500">
               未対応 {unresolvedCount}件

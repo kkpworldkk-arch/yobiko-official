@@ -1,4 +1,5 @@
 import { ChevronRight, MessagesSquare, Sparkles, UsersRound } from "lucide-react";
+import Link from "next/link";
 import { StatTile } from "@/components/stat-tile";
 import { StatusBadge } from "@/components/status-badge";
 import { MagnitudeBarList } from "@/components/magnitude-bar-list";
@@ -97,13 +98,13 @@ export default function DashboardPage() {
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                className="flex shrink-0 items-center gap-1 self-start text-body-sm font-medium text-gold-400 transition-colors duration-300 hover:text-gold-300 sm:self-center"
+              <Link
+                href={`/dashboard/students/${student.id}`}
+                className="flex shrink-0 items-center gap-1 self-start text-body-sm font-medium text-gold-400 transition-colors duration-300 hover:text-gold-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/70 sm:self-center"
               >
                 詳細を確認
                 <ChevronRight className="size-4" strokeWidth={2} />
-              </button>
+              </Link>
             </div>
           ))}
         </div>
