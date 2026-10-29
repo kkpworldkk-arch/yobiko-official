@@ -54,6 +54,8 @@ NOTATION = """数式の書き方（画面表示と音声読み上げのため、
 - 分数は a/b、分子や分母が式なら (x+1)/(x−1)。指数は x²、x³、xⁿ のような上付き文字、上付きにできないものは x^(n+1)。
 - 根号は √2、√(x+1)。添字は aₙ、a₁、上付き・下付きにできないものは a_(n+1)。
 - 積分は ∫[0→1] (x²+1) dx、総和は Σ[k=1→n] k²、極限は lim[n→∞] (1+1/n)ⁿ、ベクトルは →a や →AB、組合せは ₙCᵣ（または nCr）。
+- 補集合は「A の補集合」「(A∪B) の補集合」のように言葉で書く（上線の記号は、どこまで掛かっているかが分かりにくいので使わない）。
+  紙面の上線が1文字だけに掛かっているのか、式全体に掛かっているのかを、よく見て区別する。
 - 1行の文字だけで書く。LaTeX や画像は使わない。"""
 
 VERIFY_PROMPT = """あなたは高校数学の参考書「黄チャート式 解法と演習」の例題を、生徒向けの口頭試問（一問一答）データとして点検する担当です。
@@ -152,30 +154,37 @@ class Book:
         self.texts = [norm(self.doc[i].get_text()) for i in range(self.doc.page_count)]
         self.lock = threading.Lock()
 
-    def find_page(self, title: str) -> int | None:
+    def set_titles(self, titles: list[str]) -> None:
+        # 目次・章の扉・例題一覧のページは、たくさんの例題の見出しを含む。そうしたページを候補から外すため、
+        # ページごとに見出しがいくつ載っているかを数えておく。
+        keys = [norm(t) for t in titles if len(norm(t)) >= 4]
+        self.title_counts = [sum(1 for k in keys if k in text) for text in self.texts]
+
+    def find_page(self, title: str, after: int = -1) -> int | None:
         key = norm(title)
         if len(key) < 3:
             return None
-        # 例題のページでは見出しがページ上部に来る。章の扉・目次は除くため、上部に出るページを優先する。
-        top = [i for i, t in enumerate(self.texts) if key in t[:250]]
-        if top:
-            return top[0]
-        anywhere = [i for i, t in enumerate(self.texts) if key in t]
-        return anywhere[-1] if anywhere else None
+        # 例題は番号順に並んでいるので、前の例題より後ろのページだけを候補にする（目次やまとめのページを避ける）。
+        candidates = [i for i, t in enumerate(self.texts) if i > after and key in t and self.title_counts[i] <= 3]
+        if not candidates:
+            return None
+        # 例題のページでは見出しがページ上部に来るので、上部に出るページを優先する。
+        top = [i for i in candidates if key in self.texts[i][:300]]
+        return (top or candidates)[0]
 
     def image(self, index: int) -> str:
         with self.lock:
-            pix = self.doc[index].get_pixmap(dpi=110)
+            pix = self.doc[index].get_pixmap(dpi=int(os.environ.get("YELLOW_CHART_DPI", "110")))
             return base64.b64encode(pix.tobytes("png")).decode()
 
 
-def call_claude(text: str, images: list[str], schema: dict) -> dict:
+def call_claude(text: str, images: list[str], schema: dict, effort: str | None = None) -> dict:
     content = [{"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": img}} for img in images]
     content.append({"type": "text", "text": text})
     body = {
         "model": MODEL,
         "max_tokens": 16000,
-        "output_config": {"effort": os.environ.get("YELLOW_CHART_EFFORT", "low"), "format": {"type": "json_schema", "schema": schema}},
+        "output_config": {"effort": effort or os.environ.get("YELLOW_CHART_EFFORT", "low"), "format": {"type": "json_schema", "schema": schema}},
         "messages": [{"role": "user", "content": content}],
     }
     for attempt in range(6):
@@ -212,10 +221,64 @@ def example_title(category: str) -> tuple[str, str]:
     return (match.group(1), match.group(2).strip()) if match else ("", "")
 
 
+def retry_tasks(groups, books) -> list:
+    """1回目で紙面と照合できた例題のページを目印にして、照合できなかった例題を前後の目印の間のページから探し直す。"""
+    results = [json.loads(l) for l in RESULTS.read_text(encoding="utf-8").splitlines() if l.strip()]
+    anchors: dict[tuple, int] = {}
+    failed: set[str] = set()
+    for r in results:
+        if r.get("error") or not r.get("items"):
+            failed.add(r["key"])
+            continue
+        if r["mode"] == "verify":
+            if any(i["status"] in ("ok", "fixed", "needs_figure") for i in r["items"]):
+                anchors[(r["book"], r["part"], r["number"])] = r["pages"][0]
+            else:
+                failed.add(r["key"])
+        elif r["mode"] == "missing" and not r.get("found"):
+            failed.add(r["key"])
+    # 失敗した行を結果ファイルから外し、やり直した結果で置き換える
+    kept = [r for r in results if r["key"] not in failed]
+    RESULTS.write_text("".join(json.dumps(r, ensure_ascii=False) + chr(10) for r in kept), encoding="utf-8")
+
+    def window(book: str, part: str, number: int) -> list[int]:
+        nums = sorted(n for (b, p, n) in anchors if b == book and p == part)
+        before = [n for n in nums if n < number]
+        after = [n for n in nums if n > number]
+        if not before and not after:
+            return []
+        lo = anchors[(book, part, before[-1])] if before else anchors[(book, part, after[0])] - 4
+        hi = anchors[(book, part, after[0])] + 1 if after else lo + 5
+        if hi - lo > 7:
+            # 目印の間が広すぎるときは、番号の位置から比例配分でページを見積もって前後を見る
+            if before and after:
+                estimate = lo + (hi - lo) * (number - before[-1]) / (after[0] - before[-1])
+            else:
+                estimate = lo + 2
+            lo, hi = int(estimate) - 2, int(estimate) + 4
+        return list(range(max(lo, 0), hi + 1))[:8]
+
+    tasks = []
+    for key in sorted(failed):
+        mode, book, part, number = key.split("|")
+        number = int(number) if number.isdigit() else None
+        if number is None:
+            continue
+        pages = window(book, part, number)
+        if mode == "verify":
+            items = groups[(book, part, number)]
+            kind, title = example_title(items[0]["category"])
+            tasks.append(("verify", key, book, part, number, kind, title, items, pages))
+        else:
+            tasks.append(("missing", key, book, part, number, "", "", [], pages))
+    return tasks
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--workers", type=int, default=4)
+    parser.add_argument("--retry", action="store_true", help="照合できなかった例題を、確定したページの間から探し直す")
     args = parser.parse_args()
     load_env()
     sys.stdout.reconfigure(encoding="utf-8")
@@ -232,11 +295,15 @@ def main() -> None:
         groups.setdefault((q["book"], q["part"], q["number"]), []).append(q)
 
     books = {title: Book(title) for title in PDFS}
+    for title, book in books.items():
+        book.set_titles([example_title(q["category"])[1] for q in questions if q["book"] == title])
     page_of: dict[tuple, int] = {}
-    for (book, part, number), items in groups.items():
-        page = books[book].find_page(example_title(items[0]["category"])[1])
+    last_page: dict[tuple, int] = {}
+    for (book, part, number), items in sorted(groups.items(), key=lambda kv: (kv[0][0], kv[0][1], kv[0][2])):
+        page = books[book].find_page(example_title(items[0]["category"])[1], after=last_page.get((book, part), 0))
         if page is not None:
             page_of[(book, part, number)] = page
+            last_page[(book, part)] = page - 1
 
     def neighbor_pages(book: str, part: str, number: int) -> list[int]:
         # 見出しが文字検索で見つからない例題は、前後の例題のページの間を見せる（最大4ページ）。
@@ -265,6 +332,8 @@ def main() -> None:
                 continue
             tasks.append(("missing", key, book, part, number, "", "", [], neighbor_pages(book, part, number)))
 
+    if args.retry:
+        tasks = retry_tasks(groups, books)
     if args.limit:
         tasks = tasks[: args.limit]
     print(f"未処理 {len(tasks)} 件（済み {len(done)} 件）", flush=True)
