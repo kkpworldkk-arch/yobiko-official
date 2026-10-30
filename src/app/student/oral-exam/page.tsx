@@ -632,19 +632,31 @@ export default function OralExamPage() {
             <div className="mt-2 flex flex-col gap-4">
               {/* 種類のある本：生物は「章 → 種類 → 番号」、黄チャートは「科目 → 番号」（番号が章をまたいで重複しないため章は不要） */}
               {hasProblemTypes && typesNeedChapter && (
-                <Select value={filters.chapterStart || "__all__"} onValueChange={(value) => setFilters((current) => ({ ...current, chapterStart: value === "__all__" ? "" : (value ?? ""), chapterEnd: "", problemType: "", questionStart: "", questionEnd: "" }))}>
-                  <SelectTrigger><SelectValue placeholder="章を選択" /></SelectTrigger>
-                  <SelectContent><SelectItem value="__all__">すべての章</SelectItem>{selectedFilterOptions.chapters.filter((chapter) => selectedFilterOptions.chapterTypes[chapter]).map((chapter) => <SelectItem key={chapter} value={chapter}>{chapter}</SelectItem>)}</SelectContent>
-                </Select>
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-caption text-slate-500">章</span>
+                  <Select value={filters.chapterStart || "__all__"} onValueChange={(value) => setFilters((current) => ({ ...current, chapterStart: value === "__all__" ? "" : (value ?? ""), chapterEnd: "", problemType: "", questionStart: "", questionEnd: "" }))}>
+                    <SelectTrigger aria-label="章">
+                      <SelectValue>{(value: string | null) => (!value || value === "__all__" ? "すべての章" : value)}</SelectValue>
+                    </SelectTrigger>
+                    <SelectContent><SelectItem value="__all__">すべての章</SelectItem>{selectedFilterOptions.chapters.filter((chapter) => selectedFilterOptions.chapterTypes[chapter]).map((chapter) => <SelectItem key={chapter} value={chapter}>{chapter}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
               )}
               {hasProblemTypes && (!typesNeedChapter || filters.chapterStart) && (
-                <Select value={filters.problemType || "__all__"} onValueChange={(value) => setFilters((current) => ({ ...current, problemType: value === "__all__" ? "" : (value ?? ""), questionStart: "", questionEnd: "" }))}>
-                  <SelectTrigger><SelectValue placeholder={typesNeedChapter ? "種類を選択" : "科目を選択"} /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all__">{typesNeedChapter ? "すべての種類" : "すべての科目"}</SelectItem>
-                    {problemTypeOptions.map((type) => <SelectItem key={type} value={type}>{type}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-caption text-slate-500">{typesNeedChapter ? "種類" : "科目"}</span>
+                  <Select value={filters.problemType || "__all__"} onValueChange={(value) => setFilters((current) => ({ ...current, problemType: value === "__all__" ? "" : (value ?? ""), questionStart: "", questionEnd: "" }))}>
+                    <SelectTrigger aria-label={typesNeedChapter ? "種類" : "科目"}>
+                      <SelectValue>
+                        {(value: string | null) => (!value || value === "__all__" ? (typesNeedChapter ? "すべての種類" : "すべての科目") : value)}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all__">{typesNeedChapter ? "すべての種類" : "すべての科目"}</SelectItem>
+                      {problemTypeOptions.map((type) => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
               )}
               {selectedFilterOptions && selectedFilterOptions.pages.length > 0 && (
                 <RangeSelect
