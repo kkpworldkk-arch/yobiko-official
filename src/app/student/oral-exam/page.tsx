@@ -736,15 +736,18 @@ export default function OralExamPage() {
               </div>
 
               <div className="mt-3 rounded-lg border border-white/[0.05] bg-navy-800/60 p-4">
-                <div className="flex items-center justify-between gap-2">
-                  <Badge variant="outline">{currentQuestion.category || "総合"}</Badge>
+                {/* 章名が長くても枠からはみ出さないよう、バッジは省略表示にしてボタンは折り返す */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="outline" className="min-w-0 max-w-full shrink" title={currentQuestion.category || "総合"}>
+                    <span className="truncate">{currentQuestion.category || "総合"}</span>
+                  </Badge>
                   {currentQuestion.problemNumber !== null && (
-                    <span className="text-caption text-slate-400">
+                    <span className="whitespace-nowrap text-caption text-slate-400">
                       {currentQuestion.problemType ? `${currentQuestion.problemType} ` : "問題 "}{currentQuestion.problemNumber}
                       {currentQuestion.subLabel ? ` ${currentQuestion.subLabel}` : ""}
                     </span>
                   )}
-                  <div className="flex items-center gap-1.5">
+                  <div className="ml-auto flex shrink-0 items-center gap-1.5">
                     {!flagDone && (
                       <Button
                         type="button"

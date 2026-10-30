@@ -178,15 +178,59 @@ SYMBOL = [
     ("<", "小なり"), (">", "大なり"), ("＜", "小なり"), ("＞", "大なり"), ("±", "プラスマイナス"), ("×", "かける"), ("÷", "わる"),
     ("+", "プラス"), ("＋", "プラス"), ("−", "マイナス"), ("-", "マイナス"), ("√", "ルート"), ("π", "パイ"), ("θ", "シータ"), ("α", "アルファ"),
     ("β", "ベータ"), ("γ", "ガンマ"), ("∞", "無限大"), ("∫", "インテグラル"), ("Σ", "シグマ"), ("∩", "かつ"), ("∪", "または"), ("∈", "の要素"),
-    ("⊂", "の部分集合"), ("°", "度"), ("′", "ダッシュ"), ("|", "絶対値"), ("→", "ベクトル"), ("·", "ドット"), ("・", "、"),
+    ("⊂", "の部分集合"), ("°", "度"), ("′", "ダッシュ"), ("|", "絶対値"), ("→", "から"), ("·", "ドット"), ("・", "、"),
+    ("△", "三角形"), ("∠", "角"), ("∥", "平行"), ("⊥", "垂直"),
 ]
+SUP_ALL = {**SUP_REV, "ˣ": "x", "ʸ": "y", "ᵗ": "t", "ᵏ": "k", "ᵃ": "a", "ᵇ": "b", "⁽": "(", "⁾": ")"}
+SUB_ALL = {**SUB_REV, "₌": "=", "₍": "(", "₎": ")"}
+
+
+def _paren_end(s: str, start: int) -> int:
+    """s[start] の "(" に対応する ")" の次の位置。"""
+    depth = 0
+    for i in range(start, len(s)):
+        depth += {"(": 1, ")": -1}.get(s[i], 0)
+        if depth == 0:
+            return i + 1
+    return len(s)
+
+
+def math_phrases(text: str) -> str:
+    """極限・積分・Σ・対数の底・ベクトルなど、記号の並びを先に日本語の言い回しにする。"""
+    t = text
+    # 極限：lim_(x→a)、lim[n→∞]、limx→a
+    t = re.sub(r"lim\s*(?:_\(|\[)\s*([a-zA-Zθ])\s*→\s*([^)\]]+?)\s*[)\]]", r"リミット、\1が\2に近づくとき、", t)
+    t = re.sub(r"lim\s*([a-zA-Zθ])\s*→\s*([−\-+]?[0-9a-zA-Zπ∞/]+)", r"リミット、\1が\2に近づくとき、", t)
+    t = re.sub(r"([a-zA-Zθ])→([−\-+]?[0-9∞π/]+)のとき", r"\1が\2に近づくとき", t)
+    # 積分・和：∫[a→b]、Σ[k=1→n]、∫₀¹、Σₖ₌₁ⁿ
+    t = re.sub(r"∫\[([^\]→]*)→([^\]]*)\]", r"\1から\2までのインテグラル ", t)
+    t = re.sub(r"Σ\[([^\]→]*)→([^\]]*)\]", r"シグマ、\1から\2まで、", t)
+    sub, sup = "".join(SUB_ALL), "".join(SUP_ALL)
+    t = re.sub(f"∫([{sub}]+)([{sup}]+)", lambda m: "".join(SUB_ALL[c] for c in m[1]) + "から" + "".join(SUP_ALL[c] for c in m[2]) + "までのインテグラル ", t)
+    t = re.sub(f"Σ([{sub}]+)([{sup}]+)", lambda m: "シグマ、" + "".join(SUB_ALL[c] for c in m[1]) + "から" + "".join(SUP_ALL[c] for c in m[2]) + "まで、", t)
+    # 対数の底：log_(a)M、log_a M
+    while (i := t.find("log_(")) >= 0:
+        end = _paren_end(t, i + 4)
+        t = t[:i] + f"ログ、底が{t[i + 5:end - 1]}の、" + t[end:]
+    t = re.sub(r"log_([0-9a-zA-Z])", r"ログ、底が\1の、", t)
+    t = re.sub(f"log([{sub}]+)", lambda m: "ログ、底が" + "".join(SUB_ALL[c] for c in m[1]) + "の、", t)
+    # 第n次導関数：y⁽ⁿ⁾
+    t = re.sub(r"([a-zA-Z])⁽ⁿ⁾", r"\1の第n次導関数", t)
+    # n進法の表記：1101₍₂₎
+    t = re.sub(r"₍([₀-₉]+)₎", lambda m: "（" + "".join(SUB_ALL[c] for c in m[1]) + "進法）", t)
+    # 累乗根：⁴√
+    t = re.sub(r"([⁰-⁹]+)\s*√\s*(\([^()]*\)|\S)", lambda m: m[2] + "の" + "".join(SUP_ALL[c] for c in m[1]) + "乗根", t)
+    # ベクトル：→OP、→a。内積の「・」は「ドット」
+    t = re.sub(r"・(?=→)", " ドット ", t)
+    t = re.sub(r"(?<![A-Za-z0-9])→\s*(?=[A-Za-z])", " ベクトル ", t)
+    # 積の「・」（1・2、(n+1)・3 など）は「かける」。日本語の間の「・」はそのまま
+    t = re.sub(r"(?<=[0-9A-Za-z)）²³ⁿ⁰¹⁴⁵⁶⁷⁸⁹ₙ])・(?=[0-9A-Za-z(（…])", " かける ", t)
+    t = re.sub(r"(?<=…)・(?=[0-9A-Za-z(（])", " かける ", t)
+    return t
 
 
 def read_number(s: str) -> str:
     return s  # 数字はそのまま読ませる（読み上げエンジンが「123」を正しく読む）
-
-
-MODIFIER = {"ˣ": "x", "ʸ": "y", "ᵗ": "t", "ᵏ": "k", "ᵃ": "a", "ᵇ": "b"}
 
 
 def _operand_left(s: str, end: int) -> int:
@@ -200,7 +244,7 @@ def _operand_left(s: str, end: int) -> int:
                 break
             i -= 1
         return max(i, 0)
-    while i >= 0 and re.match(r"[\w.√⁰¹²³⁴⁵⁶⁷⁸⁹ⁿ₀₁₂₃₄₅₆₇₈₉ₙπθ]", s[i]):
+    while i >= 0 and re.match(r"[A-Za-z0-9_.√⁰¹²³⁴⁵⁶⁷⁸⁹ⁿ₀₁₂₃₄₅₆₇₈₉ₙπθ]", s[i]):
         i -= 1
     return i + 1
 
@@ -216,7 +260,7 @@ def _operand_right(s: str, start: int) -> int:
                 return i + 1
             i += 1
         return len(s)
-    while i < len(s) and re.match(r"[\w.√⁰¹²³⁴⁵⁶⁷⁸⁹ⁿ₀₁₂₃₄₅₆₇₈₉ₙπθ]", s[i]):
+    while i < len(s) and re.match(r"[A-Za-z0-9_.√⁰¹²³⁴⁵⁶⁷⁸⁹ⁿ₀₁₂₃₄₅₆₇₈₉ₙπθ]", s[i]):
         i += 1
     return i
 
@@ -242,11 +286,9 @@ def fractions_to_speech(text: str) -> str:
 
 def speech(text: str) -> str:
     """数式をざっくり日本語の読み方にする。日本語の部分はそのまま。"""
-    out = fractions_to_speech(text)
-    for mod, letter in MODIFIER.items():
-        out = out.replace(mod, f"の{letter}乗")
-    # 上付き
-    out = re.sub(r"([\w)])([⁰¹²³⁴⁵⁶⁷⁸⁹ⁿ⁻⁺]+)", lambda m: m.group(1) + ("の二乗" if m.group(2) == "²" else "の三乗" if m.group(2) == "³" else "の" + "".join(SUP_REV.get(c, c) for c in m.group(2)) + "乗"), out)
+    out = fractions_to_speech(math_phrases(text))
+    # 上付き（e⁻ˣ、3ⁿ⁻¹、2⁽⁶ⁿ⁻⁵⁾ のように続くものはまとめて「〜乗」）
+    out = re.sub(r"([\w)）}\]])([⁰¹²³⁴⁵⁶⁷⁸⁹ⁿ⁻⁺⁽⁾ˣʸᵗᵏᵃᵇ]+)", lambda m: m.group(1) + ("の二乗" if m.group(2) == "²" else "の三乗" if m.group(2) == "³" else "の" + "".join(SUP_ALL.get(c, c) for c in m.group(2)).strip("()") + "乗"), out)
     out = re.sub(r"\^\(([^()]+)\)", lambda m: f"の{m.group(1)}乗", out)
     # 下付き
     out = re.sub(r"([A-Za-z])([₀₁₂₃₄₅₆₇₈₉ₙₖ₊₋]+)", lambda m: m.group(1) + "".join(SUB_REV.get(c, c) for c in m.group(2)), out)

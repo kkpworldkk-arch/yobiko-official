@@ -161,9 +161,22 @@ for (const definition of ["problem_number INTEGER", "sub_label TEXT NOT NULL DEF
 const existing = new Set(db.prepare("SELECT id FROM oral_exam_questions").all().map((r) => r.id));
 const targets = updates.filter((u) => existing.has(u.id));
 const bookIds = new Map(db.prepare("SELECT id, title FROM oral_exam_books WHERE title LIKE '黄チャート%'").all().map((r) => [r.title, r.id]));
-const has = db.prepare("SELECT 1 FROM oral_exam_questions WHERE book_id = ? AND problem_type = ? AND problem_number = ? AND sub_label = ?");
-const newOnes = inserts.filter((q) => bookIds.has(q.book) && !has.get(bookIds.get(q.book), q.part, q.number, q.sub));
-console.log(`更新 ${targets.length}問（本番に無いID ${updates.length - targets.length}件は無視） / 非表示 ${targets.filter((u) => u.blocked).length}問 / 追加 ${newOnes.length}問`);
+// 前回の反映で追加済みの小問（同じ科目・番号・小問）は、追加せずにその行を新しい内容で上書きする
+const updateIds = new Set(targets.map((u) => u.id));
+const findAdded = db.prepare(
+  "SELECT id FROM oral_exam_questions WHERE book_id = ? AND problem_type = ? AND problem_number = ? AND sub_label = ? ORDER BY blocked, created_at DESC",
+);
+const newOnes = [];
+for (const q of inserts.filter((q) => bookIds.has(q.book))) {
+  const row = findAdded.all(bookIds.get(q.book), q.part, q.number, q.sub).find((r) => !updateIds.has(r.id));
+  if (!row) newOnes.push(q);
+  else {
+    updateIds.add(row.id);
+    targets.push({ id: row.id, prompt: q.prompt, answer: q.answer, blocked: Boolean(q.blocked), speech: q.speech ?? "", grading: q.grading ?? {}, sub: q.sub });
+  }
+}
+const readded = targets.length - updates.filter((u) => existing.has(u.id)).length;
+console.log(`更新 ${targets.length}問（うち前回追加した小問 ${readded}問。本番に無いID ${updates.length - targets.length + readded}件は無視） / 非表示 ${targets.filter((u) => u.blocked).length}問 / 追加 ${newOnes.length}問`);
 if (dryRun) process.exit(0);
 
 const stamp = new Date().toISOString().replaceAll(/[-:TZ.]/g, "").slice(0, 14);

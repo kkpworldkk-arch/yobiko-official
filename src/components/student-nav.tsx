@@ -15,7 +15,8 @@ export function StudentNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex gap-1.5">
+    // スマホ幅でも項目名が途中で折り返さないよう、1行に並べて収まらなければ横にスクロールする
+    <nav className="flex gap-1 overflow-x-auto sm:gap-1.5">
       {NAV_ITEMS.map((item) => {
         const active = pathname === item.href;
         return (
@@ -23,7 +24,7 @@ export function StudentNav() {
             key={item.href}
             href={item.href}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-body-sm transition-colors duration-300 ease-luxury",
+              "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-body-sm transition-colors duration-300 ease-luxury sm:px-3",
               active
                 ? "bg-navy-700/60 text-gold-400"
                 : "text-slate-400 hover:bg-navy-700/40 hover:text-ivory-200",

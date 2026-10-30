@@ -33,7 +33,7 @@ for key, prompt in json.loads((W / "region-prompts.json").read_text(encoding="ut
         print("元の小問が見つからない:", key); continue
     overrides[key] = {"prompt": prompt, "answer": base["answer"]}
     count += 1
-for name in ("prompt-fixes.json", "fixes-figure.json", "fixes-graph.json", "fixes-misc.json"):
+for name in ("prompt-fixes.json", "fixes-figure.json", "fixes-graph.json", "fixes-misc.json", "fixes-integral.json"):
     path = W / name
     if not path.exists():
         continue
