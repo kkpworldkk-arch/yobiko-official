@@ -271,7 +271,7 @@ function backfillKnownProblemNumbers() {
   const update = db.prepare(
     `UPDATE oral_exam_questions
      SET problem_number = COALESCE(problem_number, ?),
-         sub_label = CASE WHEN problem_number IS NULL THEN ? ELSE sub_label END,
+         sub_label = CASE WHEN problem_number IS NULL AND sub_label = '' THEN ? ELSE sub_label END,
          problem_type = CASE WHEN problem_type = '' THEN ? ELSE problem_type END
      WHERE id = ? AND (problem_number IS NULL OR (problem_type = '' AND ? <> ''))`,
   );

@@ -88,7 +88,8 @@ if (args.includes("--build-rebuilt")) {
         stats.inserted += 1;
         inserts.push({
           book: r.book, part: r.part, number: r.number,
-          category: r.category || `${r.book} - ${r.part} ${r.kind}例題 ${r.title}`.trim(), ...data,
+          // 同じ例題の既存の小問と同じ章名（カテゴリ）にそろえる（章名が違うと、範囲の選び方の判定が狂う）
+          category: old[0]?.category || r.category || `${r.book} - ${r.part} ${r.kind}例題 ${r.title}`.trim(), ...data,
         });
       }
     }

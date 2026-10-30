@@ -36,7 +36,7 @@ SOURCES = [
     ("黄チャート式 解法と演習 数学3+C", "数学C", "math3c-C-*.txt"),
 ]
 
-HEADER_RE = re.compile(r"^\s*(基本|重要|補充)例題\s*(\d+)\s*(.*)$")
+HEADER_RE = re.compile(r"^\s*(基本|重要|補充)?例題\s*(\d+)\s*(.*)$")
 CHAPTER_RE = re.compile(r"第\s*\d+\s*章.*$")
 RESULT_RE = re.compile(r"^\s*最終結果\s*$")
 ITEM_RE = re.compile(r"[（(]\s*([0-9]+|[アイウエオカキクケコ])\s*[）)]")
@@ -132,7 +132,7 @@ def parse_file(path: Path, book: str, part: str) -> list[dict]:
             chapter = line.strip()
         h = HEADER_RE.match(line)
         if h:
-            headers.append((i, h.group(1), int(h.group(2)), h.group(3).strip(), chapter))
+            headers.append((i, h.group(1) or "基本", int(h.group(2)), h.group(3).strip(), chapter))
     examples = []
     for idx, (pos, kind, number, title, chap) in enumerate(headers):
         end = headers[idx + 1][0] if idx + 1 < len(headers) else len(lines)
@@ -279,6 +279,18 @@ def main() -> None:
         if key not in best or len(ex.get("items", [])) > len(best[key].get("items", [])):
             best[key] = ex
     examples = sorted(best.values(), key=lambda e: (e["book"], e["part"], e["number"]))
+    # 取り込み元のテキストに無かった例題（紙面から読み取って data/yellow-chart/missing-examples.json に書いたもの）
+    missing_path = OUT.parent / "missing-examples.json"
+    if missing_path.exists():
+        have = {(e["part"], e["number"]) for e in examples}
+        for key, ex in json.loads(missing_path.read_text(encoding="utf-8")).items():
+            part, number = key.split("|")
+            if (part, int(number)) in have:
+                continue
+            examples.append({"book": ex["book"], "part": part, "number": int(number), "kind": ex["kind"], "title": ex["title"],
+                             "chapter": "", "source": "missing-examples.json",
+                             "items": [{**item, "flags": [], "patched": True} for item in ex["items"]]})
+        examples.sort(key=lambda e: (e["book"], e["part"], e["number"]))
     overrides = json.loads(OVERRIDES.read_text(encoding="utf-8")) if OVERRIDES.exists() else {}
     for ex in examples:
         key = f"{ex['part']}|{ex['number']}"
