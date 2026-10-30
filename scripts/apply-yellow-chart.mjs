@@ -23,10 +23,14 @@ if (args.includes("--build-rebuilt")) {
   // 新データに対応しない既存の小問と、検算で矛盾が残った小問は非表示にする（回答履歴は残る）。
   const questions = JSON.parse(readFileSync("data/yellow-chart/questions.json", "utf8"));
   const rebuilt = new Map();
-  for (const line of readFileSync("data/yellow-chart/rebuilt.jsonl", "utf8").split(String.fromCharCode(10))) {
+  // 入力：既定は API で作り直した rebuilt.jsonl。--build-rebuilt の次にファイルを指定すると、そのファイルを使う
+  const sourceArg = args[args.indexOf("--build-rebuilt") + 1];
+  const sourcePath = sourceArg && !sourceArg.startsWith("--") ? sourceArg : "data/yellow-chart/rebuilt.jsonl";
+  for (const line of readFileSync(sourcePath, "utf8").split(String.fromCharCode(10))) {
     if (!line.trim()) continue;
     const r = JSON.parse(line);
-    if (!r.error && r.found !== false && r.items?.length) rebuilt.set(r.key, r);
+    // allSkipped: 図が無いと答えられないなどで、小問をすべて出題しないと決めた例題（既存の問題は非表示にする）
+    if (!r.error && r.found !== false && (r.items?.length || r.allSkipped)) rebuilt.set(r.key, r);
   }
   const byExample = new Map();
   for (const q of questions) {
