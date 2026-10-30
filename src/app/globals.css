@@ -158,6 +158,10 @@
  * ライト/ダーク設定には依存させない（高級ブランドは配色を選ばせない）。
  * ------------------------------------------------------------------- */
 :root {
+  /* layout.tsx で読み込む @fontsource-variable の書体名 */
+  --font-inter: "Inter Variable";
+  --font-noto-jp: "Noto Sans JP Variable";
+  --font-geist-mono: "Geist Mono Variable";
   --background: var(--color-navy-900);
   --foreground: var(--color-ivory-100);
   --card: var(--color-navy-700);
