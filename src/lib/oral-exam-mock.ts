@@ -108,7 +108,7 @@ export function generateOralExamFeedback({
 }
 
 // App Store 審査・体験用の問題集。市販の参考書を使わず、この塾で独自に作成した問題だけで構成する。
-// 審査用のゲスト生徒（REVIEW_STUDENT_ID）にはこの問題集だけを割り当てる（db.ts の ensureReviewSampleBook）。
+// 審査用に作ったテスト生徒（REVIEW_STUDENT_ID）には、この問題集と全参考書を割り当てる（db.ts の ensureReviewSampleBook）。
 // 「覚えているかを問う問題」と「解く問題」（求めよ・解け）の両方を含め、反応時間の判定も確認できるようにしている。
 export const reviewSampleBookSeed = {
   book: {

@@ -1,6 +1,6 @@
 // App Store 審査に出す前に、審査用ゲスト生徒（test.family@example.com / 生徒台帳 s-test-family）の
 // 学習記録を空にするCLI。動作確認で解いた市販参考書の問題文が「これまでの記録」に残らないようにする。
-// 参考書の割り当て（体験用サンプル問題集のみ）はアプリ側が自動で保つので、ここでは触らない。
+// 参考書の割り当て（全参考書）はアプリ側が自動で保つので、ここでは触らない。
 //   使い方: node scripts/reset-review-account.mjs
 import { DatabaseSync } from "node:sqlite";
 import path from "node:path";

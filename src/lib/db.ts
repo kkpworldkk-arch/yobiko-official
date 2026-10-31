@@ -1841,8 +1841,9 @@ function assignChemistryBookToAllStudents(): void {
   }
 }
 
-// App Store 審査用のゲスト生徒（test.family@example.com に紐付く生徒台帳）。審査の担当者に市販の参考書の
-// 問題が見えないよう、塾オリジナルの体験用問題集だけを割り当てた状態を常に保つ。
+// App Store 審査用に作ったテスト生徒（test.family@example.com に紐付く生徒台帳）。審査通過後は
+// 動作確認用として、体験用サンプル問題集を含むすべての参考書を割り当てた状態を常に保つ。
+// 後から追加した参考書もここで自動的に割り当たる。
 export const REVIEW_STUDENT_ID = "s-test-family";
 
 function ensureReviewSampleBook(): void {
@@ -1861,9 +1862,8 @@ function ensureReviewSampleBook(): void {
     bulkAddOralExamQuestions(bookId, reviewSampleBookSeed.questions);
   }
 
-  db.prepare("DELETE FROM oral_exam_assignments WHERE student_id = ? AND book_id != ?").run(
-    REVIEW_STUDENT_ID,
-    bookId,
-  );
-  assignOralExamBook(REVIEW_STUDENT_ID, bookId);
+  const books = db.prepare("SELECT id FROM oral_exam_books").all() as { id: string }[];
+  for (const book of books) {
+    assignOralExamBook(REVIEW_STUDENT_ID, book.id);
+  }
 }
