@@ -461,6 +461,22 @@ export function getQaHistory(studentId: string): QaHistoryEntry[] {
   return rows.map(rowToEntry);
 }
 
+// 講師画面上部の検索欄から、全生徒の質問履歴を教科・単元・質問文・弱点タグで探す
+export function searchQaHistory(query: string, limit = 30): QaHistoryEntry[] {
+  ensureSeeded(demoStudent.id);
+  const pattern = `%${query.replace(/[!%_]/g, (c) => `!${c}`)}%`;
+  const rows = db
+    .prepare(
+      `SELECT * FROM qa_history
+       WHERE subject LIKE ?1 ESCAPE '!' OR unit LIKE ?1 ESCAPE '!'
+          OR question LIKE ?1 ESCAPE '!' OR weakness_tag LIKE ?1 ESCAPE '!'
+       ORDER BY asked_at DESC
+       LIMIT ?2`,
+    )
+    .all(pattern, limit) as unknown as QaRow[];
+  return rows.map(rowToEntry);
+}
+
 export function insertQaHistory(
   studentId: string,
   question: { subject: string; unit: string; question: string },

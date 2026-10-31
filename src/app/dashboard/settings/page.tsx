@@ -103,7 +103,7 @@ export default async function SettingsPage() {
         <PasskeyButton mode="register" />
       </section>
 
-      <section className="rounded-xl border border-border bg-card p-6 shadow-panel">
+      <section id="feedback" className="scroll-mt-6 rounded-xl border border-border bg-card p-6 shadow-panel">
         <h2 className="flex items-center gap-2 text-h3 text-ivory-100">
           <MessageSquareText className="size-4.5 text-slate-400" strokeWidth={1.75} />
           生徒からの要望

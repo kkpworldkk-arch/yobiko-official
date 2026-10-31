@@ -152,3 +152,19 @@ export function getLiveTodaysNewQuestions(): {
   const delta = today - yesterday;
   return { count: today, deltaLabel: delta >= 0 ? `+${delta}` : `${delta}` };
 }
+
+// 講師画面の通知に出す「講師確認待ちがある生徒」。件数は合計（getLiveTotalPendingChecks）と同じく、
+// デモ生徒だけ実データの件数に差し替える。
+export function getPendingCheckStudents(): { id: string; name: string; count: number }[] {
+  return getRoster()
+    .map((student) => ({
+      id: student.id,
+      name: student.name,
+      count:
+        student.id === demoStudent.id
+          ? getUnresolvedTeacherCheckCount(demoStudent.id)
+          : student.pendingTeacherChecks,
+    }))
+    .filter((student) => student.count > 0)
+    .sort((a, b) => b.count - a.count);
+}

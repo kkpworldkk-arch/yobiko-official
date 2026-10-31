@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { getLiveTotalPendingChecks } from "@/lib/roster";
+import { getAllStudentFeedback } from "@/lib/db";
+import { getLiveTotalPendingChecks, getPendingCheckStudents } from "@/lib/roster";
 import { getSession } from "@/lib/session";
 import { DashboardTopbar } from "@/components/dashboard-topbar";
 import { DashboardSidebarNav } from "@/components/dashboard-sidebar-nav";
@@ -20,6 +21,12 @@ export default async function DashboardLayout({
   }
 
   const totalPendingChecks = getLiveTotalPendingChecks();
+  const notifications = {
+    pendingStudents: getPendingCheckStudents(),
+    unresolvedFeedback: getAllStudentFeedback()
+      .filter((item) => !item.resolved)
+      .map(({ id, studentName, message, createdAt }) => ({ id, studentName, message, createdAt })),
+  };
 
   // サイドバーの中身。iPad・PCでは左に常時表示し、iPhone幅ではメニューから開く
   const sidebarBody = (
@@ -75,7 +82,7 @@ export default async function DashboardLayout({
 
       <div className="flex min-w-0 flex-1 flex-col">
         <DashboardTopbar
-          totalPendingChecks={totalPendingChecks}
+          notifications={notifications}
           teacherName={session.name}
           mobileNav={<DashboardMobileNav>{sidebarBody}</DashboardMobileNav>}
         />
