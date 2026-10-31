@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Check, Paperclip, Search } from "lucide-react";
 import {
   Select,
@@ -15,32 +16,42 @@ import { formatRelativeTimeJa } from "@/lib/format";
 import type { QaHistoryEntry } from "@/lib/types";
 
 export default function DashboardHistoryPage() {
+  // 履歴ページを開いたまま別の生徒（?studentId=）へ移動しても切り替わるよう、URLの変化を追う
+  const requestedStudentId = useSearchParams().get("studentId") ?? demoStudent.id;
   const [history, setHistory] = useState<QaHistoryEntry[]>([]);
   const [historyStudentName, setHistoryStudentName] = useState(demoStudent.name);
-  const studentIdRef = useRef(demoStudent.id);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loadedStudentId, setLoadedStudentId] = useState<string | null>(null);
+  const studentIdRef = useRef(requestedStudentId);
+  const isLoading = loadedStudentId !== requestedStudentId;
   const [search, setSearch] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("");
   const [resolvingId, setResolvingId] = useState<string | null>(null);
 
   useEffect(() => {
-    const requestedStudentId =
-      new URLSearchParams(window.location.search).get("studentId") ?? demoStudent.id;
     studentIdRef.current = requestedStudentId;
+    let cancelled = false;
     Promise.all([
       fetch(`/api/tutor?studentId=${encodeURIComponent(requestedStudentId)}`).then((res) => res.json()),
       fetch("/api/students").then((res) => res.json()),
     ])
       .then(([historyData, studentsData]) => {
+        if (cancelled) return;
         setHistory(historyData.history ?? []);
         const selectedStudent = (studentsData.students ?? []).find(
           (student: { id: string }) => student.id === requestedStudentId,
         );
-        if (selectedStudent?.name) setHistoryStudentName(selectedStudent.name);
+        setHistoryStudentName(selectedStudent?.name ?? demoStudent.name);
       })
-      .catch(() => setHistory([]))
-      .finally(() => setIsLoading(false));
-  }, []);
+      .catch(() => {
+        if (!cancelled) setHistory([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadedStudentId(requestedStudentId);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [requestedStudentId]);
 
   async function handleResolve(id: string) {
     setResolvingId(id);
