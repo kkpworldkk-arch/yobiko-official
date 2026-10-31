@@ -22,17 +22,22 @@ const formattedDate = new Intl.DateTimeFormat("ja-JP", {
 export function DashboardTopbar({
   totalPendingChecks,
   teacherName,
+  mobileNav,
 }: {
   totalPendingChecks: number;
   teacherName: string;
+  mobileNav: React.ReactNode;
 }) {
   return (
-    <header className="no-print flex items-center justify-between gap-6 border-b border-border px-8 py-5">
-      <div>
-        <h1 className="text-h1 text-ivory-100">
-          おかえりなさい、{teacherName}先生
-        </h1>
-        <p className="mt-1 text-caption text-slate-400">{formattedDate}</p>
+    <header className="no-print flex items-center justify-between gap-3 border-b border-border px-4 py-4 sm:gap-6 sm:px-8 sm:py-5">
+      <div className="flex items-center gap-3">
+        {mobileNav}
+        <div>
+          <h1 className="text-h2 text-ivory-100 sm:text-h1">
+            おかえりなさい、{teacherName}先生
+          </h1>
+          <p className="mt-1 text-caption text-slate-400">{formattedDate}</p>
+        </div>
       </div>
 
       <div className="flex items-center gap-3">
