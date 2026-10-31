@@ -1119,8 +1119,29 @@ export function getOralExamQuestions(bookId: string): OralExamQuestionRecord[] {
   return rows.map(questionRowToRecord);
 }
 
+// 件数や習熟度の集計だけに使う。本文・採点基準まで読む getOralExamQuestions は、生徒一覧や
+// 参考書一覧のように全参考書をまとめて数える画面では重すぎるため、問題IDだけを返す。
+export function getOralExamQuestionIds(bookId: string): string[] {
+  const rows = db
+    .prepare("SELECT id FROM oral_exam_questions WHERE book_id = ?")
+    .all(bookId) as unknown as { id: string }[];
+  return rows.map((row) => row.id);
+}
+
 export function getOralExamFilterOptions(bookId: string): OralExamFilterOptions {
-  const questions = getOralExamQuestions(bookId);
+  // 絞り込みの選択肢に必要な列だけを、掲載順に読む（本文・採点基準は読まない）
+  const questions = (
+    db
+      .prepare(
+        "SELECT category, problem_type, problem_number, source_page FROM oral_exam_questions WHERE book_id = ? ORDER BY order_index ASC, created_at ASC",
+      )
+      .all(bookId) as unknown as Pick<OralExamQuestionRow, "category" | "problem_type" | "problem_number" | "source_page">[]
+  ).map((row) => ({
+    category: row.category,
+    problemType: row.problem_type ?? "",
+    problemNumber: row.problem_number ?? null,
+    sourcePage: row.source_page,
+  }));
   const pages = new Set<number>();
   // 章は五十音順ではなく参考書の掲載順（最初に出てくる問題の順）で並べる。範囲指定の「〜」が本の順序と一致するように。
   const chapters = new Set<string>();
@@ -1633,12 +1654,12 @@ export function getOralExamStudentSummary(studentId: string): OralExamStudentSum
   let dueCount = 0;
 
   for (const book of books) {
-    const questions = getOralExamQuestions(book.id);
+    const questionIds = getOralExamQuestionIds(book.id);
     const masteryRows = getMasteryForBook(studentId, book.id);
     const masteryByQuestion = new Map(masteryRows.map((m) => [m.questionId, m]));
-    totalQuestions += questions.length;
-    for (const question of questions) {
-      const mastery = masteryByQuestion.get(question.id) ?? null;
+    totalQuestions += questionIds.length;
+    for (const questionId of questionIds) {
+      const mastery = masteryByQuestion.get(questionId) ?? null;
       if (mastery && mastery.level >= 4) masteredCount += 1;
       if (isDue(mastery)) dueCount += 1;
     }

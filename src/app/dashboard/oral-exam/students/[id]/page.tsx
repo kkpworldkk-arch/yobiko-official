@@ -8,7 +8,7 @@ import {
   getMasteryForBook,
   getOralExamAttempts,
   getOralExamInsight,
-  getOralExamQuestions,
+  getOralExamQuestionIds,
   getOralExamStudentSummary,
   saveOralExamInsight,
 } from "@/lib/db";
@@ -65,11 +65,11 @@ export default async function OralExamStudentProgressPage({
 
   const levelCounts = new Array(MASTERY_LEVEL_LABELS.length).fill(0);
   for (const book of assignedBooks) {
-    const questions = getOralExamQuestions(book.id);
+    const questionIds = getOralExamQuestionIds(book.id);
     const masteryRows = getMasteryForBook(id, book.id);
     const byQuestion = new Map(masteryRows.map((m) => [m.questionId, m]));
-    for (const question of questions) {
-      const mastery = byQuestion.get(question.id);
+    for (const questionId of questionIds) {
+      const mastery = byQuestion.get(questionId);
       levelCounts[mastery?.level ?? 0] += 1;
     }
   }
