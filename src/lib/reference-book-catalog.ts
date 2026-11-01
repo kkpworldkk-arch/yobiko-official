@@ -40,6 +40,13 @@ export const REFERENCE_BOOK_CATALOG: ReferenceBookCatalogEntry[] = [
     description: "sankosho/標準セミナー生物基礎2021.pdf（146ページ）。画像PDF・OCR未実施。生物基礎の重要事項を口頭確認する教材。",
   },
   {
+    fileName: "生物　基礎問題精講.pdf",
+    title: "生物 基礎問題精講",
+    subject: "生物・生物基礎",
+    pageCount: 336,
+    description: "sankosho/生物　基礎問題精講.pdf（336ページ）。参考書の問題番号・小問番号・紙面の解答をそのまま反映する口頭試問用教材。",
+  },
+  {
     fileName: "黄チャート式 解法と演習 数学1+A .pdf",
     title: "黄チャート式 解法と演習 数学1+A",
     subject: "数学・数学1+A",
