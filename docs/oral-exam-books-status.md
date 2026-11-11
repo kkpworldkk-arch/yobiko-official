@@ -39,11 +39,12 @@
 
 **本番への反映手順（Render の Shell。作り直したときのため）**
 
-図とデータを1つのファイル（`data/chem230-update.tar.gz`）にまとめて送る。先にアプリのコードを本番に反映しておくこと（図の表示と `F:` 行の読み込みが必要）。
+図とデータを1つのファイル（`data/chem230-update.tar.gz`）にまとめ、アプリの講師画面から取り込む（Render の Shell や wormhole は使わない。wormhole は 2026-11-11 に中継サーバーへつながらなかった）。
 
-1. PC の PowerShell で `cd C:\滝原塾アプリ開発\data; tar czf chem230-update.tar.gz oral-exam-figures/chem230 -C manual-import chemistry-230.txt; wormhole send chem230-update.tar.gz` を実行する。
-2. Render の Shell で `cd /var/data && wormhole receive 合言葉 && tar xzf chem230-update.tar.gz && cd ~/project/src && node scripts/import-chemistry-230.mjs /var/data/chemistry-230.txt` を実行する。
-3. 「入れ替え完了: 1258小問」と出れば終わり。
+1. PC の PowerShell で `cd C:\滝原塾アプリ開発\data; tar czf chem230-update.tar.gz oral-exam-figures/chem230 -C manual-import chemistry-230.txt` を実行する（データを直したときだけ）。
+2. 本番アプリに講師でログインし、「口頭試問」→「図つきデータの取り込み」を開く。
+3. 参考書に「化学頻出スタンダード問題230選」を選び、`chem230-update.tar.gz` を選ぶ。
+4. 「件数を確認する」で「新データ: 1258小問（図つき 394小問）」と出ることを確かめてから、「取り込む」を押す。「入れ替え完了」と出れば終わり。
 
 章・問題番号・小問番号が同じ小問は、生徒の習熟度を引き継ぐ。回答履歴は消えない。実行前にバックアップが自動で作られる。図のファイルが本番に無いときは、入れ替えずに止まる。
 
