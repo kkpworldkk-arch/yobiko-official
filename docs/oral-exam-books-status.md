@@ -1,6 +1,6 @@
 # 口頭試問の参考書データ：どこまで完璧か
 
-最終更新：2026年10月30日
+最終更新：2026年11月11日
 
 参考書ごとに、問題データの状態と残りの作業を書き留める。
 参考書の本文（PDF・問題データ）は著作物なので、GitHub には入れず、このPCの `sankosho/` と `data/` にだけ置いている。
@@ -27,20 +27,25 @@
   - 誤り460件を直した。
   - 抜けていた小問689件を追加した。
 - **番号のずれ**：別の問題の内容が紛れていたものは外し、本来の番号で作った。
-- **図が必要な小問**：図の内容を言葉で問題文に書いた。どうしても無理な16件だけ出題しない（理由はデータに残してある）。
+- **図が必要な小問**：（11月11日に変更）紙面の図・表・グラフ・構造式を切り出して、出題画面に表示するようにした。
+  - 図は74問・85枚。図のある問題では、その問題のすべての小問に図を出す（1,258小問のうち394小問）。
+  - 図を言葉で長々と説明していた問題文（状態図、周期表、結晶、電気分解の回路、気体の発生装置、滴定曲線など）60件を、「図の①〜④から選べ」のような本どおりの短い問いに戻した。その小問の必須キーワードも、記号で答えられるように直した。
+  - 図が無いせいで外していた第8問 問3（イオン化エネルギーのグラフを選ぶ）を戻した。
+  - 第179問 問2(D)(H) の崩れた問題文、第117問 問2 の「直列」という誤り（実際は直列・並列混合の回路）も直した。
+  - 図の置き場所：`data/oral-exam-figures/chem230/`（本番は `/var/data/oral-exam-figures/chem230/`）。データの `F:` 行で問題と図を結びつける。切り出しの範囲は Claude が全ページを見て決めた。
+  - 作図が必要な問題など、図があっても音声で答えられないものは、これまでどおり出題しない。
 - **読み上げ**：化学式に読み上げ用の文を付けた（例：H2O →「エイチツーオー」）。
-- **データ**：`data/manual-import/chemistry-230.txt`（作り直し前は `chemistry-230.before-rebuild.txt`）。
+- **データ**：`data/manual-import/chemistry-230.txt`（作り直し前は `chemistry-230.before-rebuild.txt`、図を付ける前は `chemistry-230.before-figures.txt`）。
 
 **本番への反映手順（Render の Shell。作り直したときのため）**
 
-1. PC の PowerShell で、`data/manual-import` に移動する。
-2. `wormhole send chemistry-230.txt` を実行する。
-3. Render の Shell で `cd ~/project/src` を実行する。
-4. `wormhole receive 合言葉` を実行する。
-5. `node scripts/import-chemistry-230.mjs chemistry-230.txt --dry-run` で「1257小問」と出ることを確かめる。
-6. `--dry-run` を付けずに、同じコマンドを実行する。
+図とデータを1つのファイル（`data/chem230-update.tar.gz`）にまとめて送る。先にアプリのコードを本番に反映しておくこと（図の表示と `F:` 行の読み込みが必要）。
 
-入れ替えると、生徒の化学の習熟度はリセットされる（回答履歴は残る）。実行前にバックアップが自動で作られる。
+1. PC の PowerShell で `cd C:\滝原塾アプリ開発\data; tar czf chem230-update.tar.gz oral-exam-figures/chem230 -C manual-import chemistry-230.txt; wormhole send chem230-update.tar.gz` を実行する。
+2. Render の Shell で `cd /var/data && wormhole receive 合言葉 && tar xzf chem230-update.tar.gz && cd ~/project/src && node scripts/import-chemistry-230.mjs /var/data/chemistry-230.txt` を実行する。
+3. 「入れ替え完了: 1258小問」と出れば終わり。
+
+章・問題番号・小問番号が同じ小問は、生徒の習熟度を引き継ぐ。回答履歴は消えない。実行前にバックアップが自動で作られる。図のファイルが本番に無いときは、入れ替えずに止まる。
 
 ## システム英単語 / システム英単語 メディカル ✅
 

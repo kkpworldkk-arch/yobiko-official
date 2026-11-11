@@ -168,6 +168,7 @@ export async function POST(request: NextRequest) {
     speechText: item.question.speechText,
     category: item.question.category,
     prompt: item.question.prompt,
+    figures: item.question.figures,
     kind: questionKind(item.question, book.subject),
     mastery: item.mastery,
   }));

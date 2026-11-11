@@ -261,6 +261,9 @@ ensureColumn("oral_exam_questions", "question_kind", "question_kind TEXT NOT NUL
 ensureColumn("oral_exam_questions", "speech_text", "speech_text TEXT NOT NULL DEFAULT ''");
 ensureColumn("oral_exam_questions", "grading_json", "grading_json TEXT NOT NULL DEFAULT ''");
 ensureColumn("oral_exam_questions", "problem_type", "problem_type TEXT NOT NULL DEFAULT ''");
+// 問題の図（参考書から切り出した画像）。DATA_DIR/oral-exam-figures からの相対パスの JSON 配列。
+// 画像は著作物なので git に入れず、本番の永続ディスクへ別に送る。
+ensureColumn("oral_exam_questions", "figures_json", "figures_json TEXT NOT NULL DEFAULT ''");
 
 // 本の問題番号を保存していなかった頃に取り込んだ参考書（黄チャート・システム英単語）へ、
 // 照合済みの対応表（scripts/generate-problem-numbers.py で生成）から番号と科目を入れる。
@@ -1062,6 +1065,7 @@ interface OralExamQuestionRow {
   question_kind: string;
   speech_text: string;
   grading_json: string;
+  figures_json: string;
   source_page: number | null;
   category: string;
   prompt: string;
@@ -1089,6 +1093,23 @@ function parseOralExamGrading(value: string | null | undefined): OralExamGrading
   } catch { return emptyOralExamGrading(); }
 }
 
+function parseOralExamFigures(value: string | null | undefined): string[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === "string") : [];
+  } catch { return []; }
+}
+
+const ORAL_EXAM_FIGURE_DIR = path.join(DATA_DIR, "oral-exam-figures");
+
+// 図の相対パス（例 chem230/045-1.png）を実ファイルのパスにする。フォルダの外を指すものは null。
+export function resolveOralExamFigurePath(relative: string): string | null {
+  if (!/^[\w-]+(?:\/[\w.-]+)*\.(?:png|jpg|jpeg|webp)$/i.test(relative) || relative.includes("..")) return null;
+  const resolved = path.resolve(ORAL_EXAM_FIGURE_DIR, relative);
+  return resolved.startsWith(ORAL_EXAM_FIGURE_DIR + path.sep) ? resolved : null;
+}
+
 function questionRowToRecord(row: OralExamQuestionRow): OralExamQuestionRecord {
   return {
     id: row.id,
@@ -1100,6 +1121,7 @@ function questionRowToRecord(row: OralExamQuestionRow): OralExamQuestionRecord {
     questionKind: row.question_kind === "recall" || row.question_kind === "solve" ? row.question_kind : null,
     speechText: row.speech_text ?? "",
     grading: parseOralExamGrading(row.grading_json),
+    figures: parseOralExamFigures(row.figures_json),
     sourcePage: row.source_page,
     category: row.category,
     prompt: row.prompt,
@@ -1221,6 +1243,7 @@ export function addOralExamQuestion(
     questionKind: input.questionKind === "recall" || input.questionKind === "solve" ? input.questionKind : null,
     speechText: input.speechText ?? "",
     grading: input.grading ?? emptyOralExamGrading(),
+    figures: [],
     sourcePage: input.sourcePage ?? null,
     category: input.category,
     prompt: input.prompt,

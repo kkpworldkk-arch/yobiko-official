@@ -49,6 +49,7 @@ interface QueueQuestion {
   speechText: string;
   category: string;
   prompt: string;
+  figures?: string[];
   kind: OralExamQuestionKind;
   mastery: OralExamMastery | null;
 }
@@ -773,6 +774,27 @@ export default function OralExamPage() {
                 <p className="mt-2 text-body leading-relaxed text-ivory-100">
                   {currentQuestion.prompt}
                 </p>
+                {currentQuestion.figures && currentQuestion.figures.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {currentQuestion.figures.map((figure) => (
+                      // 参考書の図。白い紙面のまま見せ、タップで原寸を開けるようにする
+                      <a
+                        key={figure}
+                        href={`/api/oral-exam/figures/${figure}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block overflow-hidden rounded-md bg-white p-2"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={`/api/oral-exam/figures/${figure}`}
+                          alt="問題の図"
+                          className="mx-auto max-h-80 w-auto max-w-full object-contain"
+                        />
+                      </a>
+                    ))}
+                  </div>
+                )}
 
                 {flagOpen && !flagDone && (
                   <div className="mt-3 rounded-lg border border-amber-400/20 bg-amber-400/5 p-3">

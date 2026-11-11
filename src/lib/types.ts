@@ -165,6 +165,8 @@ export interface OralExamQuestionRecord {
   questionKind: "recall" | "solve" | null;
   speechText: string;
   grading: OralExamGrading;
+  // 問題の図。/api/oral-exam/figures/ 以下で配信する相対パス。
+  figures: string[];
   sourcePage: number | null;
   category: string;
   prompt: string;
