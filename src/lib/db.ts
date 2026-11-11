@@ -52,6 +52,10 @@ const DATA_DIR = isProductionBuild
     : path.join(process.cwd(), "data");
 fs.mkdirSync(DATA_DIR, { recursive: true });
 
+export function getDataDir(): string {
+  return DATA_DIR;
+}
+
 // node:sqlite is built into Node — no native addon / node-gyp build step,
 // unlike better-sqlite3. Fine for this app's single-writer local usage.
 const db = new DatabaseSync(path.join(DATA_DIR, "app.db"));

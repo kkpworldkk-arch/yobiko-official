@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BookOpen, BookMarked, Clock3, Mic, ScanLine, Users } from "lucide-react";
 import { CreateBookDialog } from "@/components/oral-exam/create-book-dialog";
+import { ImportBundleDialog } from "@/components/oral-exam/import-bundle-dialog";
 import {
   ensureOralExamSeeded,
   getAssignedBooksForStudent,
@@ -38,7 +39,10 @@ export default function DashboardOralExamPage() {
             参考書ごとの問題を管理し、生徒に割り当てて習熟度・反応速度を追跡します。
           </p>
         </div>
-        <CreateBookDialog />
+        <div className="flex flex-wrap items-center gap-2">
+          <ImportBundleDialog bookTitles={books.map((book) => book.title)} />
+          <CreateBookDialog />
+        </div>
       </div>
 
       <section className="rounded-xl border border-gold-500/20 bg-gold-500/[0.05] p-6 shadow-panel">
