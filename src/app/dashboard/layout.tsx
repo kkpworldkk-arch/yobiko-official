@@ -6,6 +6,7 @@ import { getSession } from "@/lib/session";
 import { DashboardTopbar } from "@/components/dashboard-topbar";
 import { DashboardSidebarNav } from "@/components/dashboard-sidebar-nav";
 import { DashboardMobileNav } from "@/components/dashboard-mobile-nav";
+import { NavigationGuard } from "@/components/navigation-guard";
 
 // SQLiteから毎回最新の講師確認件数を読むため、静的レンダリングのキャッシュを無効化する
 export const dynamic = "force-dynamic";
@@ -76,6 +77,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex min-h-screen w-full bg-navy-900">
+      <NavigationGuard />
       <aside className="no-print hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar px-4 py-6 sm:flex">
         {sidebarBody}
       </aside>

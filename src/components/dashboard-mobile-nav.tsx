@@ -1,13 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 // iPhone幅（sm未満）ではサイドバーを常時表示すると本文が細い列に押し込まれるため、
 // メニューボタンから左にスライドして開く。中身はサイドバーと同じものを受け取る。
 export function DashboardMobileNav({ children }: { children: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  // 開いたときのパスを覚えておき、ページが変わったら開いたままにしない。
+  // どの経路で遷移しても、メニューと背面の覆いが次の画面の操作を塞がないようにするため
+  const [openedAt, setOpenedAt] = useState<string | null>(null);
+  const open = openedAt === pathname;
+  const setOpen = (next: boolean) => setOpenedAt(next ? pathname : null);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>

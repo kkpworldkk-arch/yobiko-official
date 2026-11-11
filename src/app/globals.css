@@ -206,6 +206,19 @@
   html {
     @apply font-sans;
   }
+  /* iPad では、ダブルタップ拡大の判定待ちでタップが遅れたり取りこぼされたりするため、
+     押せる要素はタップを即座に受け付ける */
+  a,
+  button,
+  summary,
+  label,
+  [role="button"],
+  [role="menuitem"],
+  input,
+  select,
+  textarea {
+    touch-action: manipulation;
+  }
 }
 
 /* 弱点診断レポート等、画面を印刷・PDF化する場面向けの最低限の対応。

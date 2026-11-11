@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
@@ -22,6 +22,18 @@ const NAV_ITEMS = [
   { label: "弱点分析", icon: BarChart3, href: "/dashboard/analysis" },
   { label: "設定", icon: Settings, href: "/dashboard/settings" },
 ];
+
+// 押した直後から遷移が終わるまで、リンクの横に回転マークを出す
+function PendingSpinner() {
+  const { pending } = useLinkStatus();
+  if (!pending) return null;
+  return (
+    <span
+      aria-hidden
+      className="ml-auto size-3.5 animate-spin rounded-full border-2 border-gold-400 border-t-transparent"
+    />
+  );
+}
 
 export function DashboardSidebarNav() {
   const pathname = usePathname();
@@ -47,6 +59,7 @@ export function DashboardSidebarNav() {
           >
             <item.icon className="size-4" strokeWidth={1.75} />
             {item.label}
+            <PendingSpinner />
           </Link>
         );
       })}
