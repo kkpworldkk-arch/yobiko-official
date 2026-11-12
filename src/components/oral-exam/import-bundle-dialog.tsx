@@ -61,7 +61,8 @@ export function ImportBundleDialog({ bookTitles }: { bookTitles: string[] }) {
           <DialogTitle>図つき問題データの取り込み</DialogTitle>
           <DialogDescription>
             問題データ（.txt）と図をまとめた .tar.gz を送ると、選んだ参考書の問題を入れ替えます。
-            入れ替える前にデータベースのバックアップが自動で作られ、生徒の習熟度は同じ問題番号のものを引き継ぎます。
+            図の対応表（.json）と図をまとめたものなら、参考書の選択に関係なく、既存の問題に図だけを付けます。
+            どちらも、書き換える前にデータベースのバックアップが自動で作られ、生徒の習熟度は残ります。
           </DialogDescription>
         </DialogHeader>
 
