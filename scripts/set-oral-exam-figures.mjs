@@ -2,9 +2,12 @@
 // 使い方: node scripts/set-oral-exam-figures.mjs figures.json [--dry-run]
 // figures.json: [{ "book": 参考書名, "type": 種類（数学A など）, "number": 問題番号, "figures": ["yellow-chart/ma-084-1.png", ...] }]
 // 対応表に出てくる参考書は、いったん全問の図を外してから付け直す（何度実行しても同じ結果になる）。
+// "items": [{ "sub", "prompt", "answer", "speech" }] がある問題は、図が無くて非表示にしていた問題を作り直したもの。
+// 同じ小問番号の問題を上書きして表示に戻し（ID はそのまま）、無い小問は追加する。
 import { copyFileSync, existsSync, readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import path from "node:path";
+import crypto from "node:crypto";
 
 const args = process.argv.slice(2);
 const inputPath = args.find((arg) => !arg.startsWith("--"));
@@ -30,7 +33,10 @@ for (const title of new Set(entries.map((e) => e.book))) {
 const find = db.prepare("SELECT id FROM oral_exam_questions WHERE book_id = ? AND problem_type = ? AND problem_number = ?");
 const plan = entries.map((e) => ({ ...e, ids: find.all(bookIds.get(e.book), e.type, e.number).map((r) => r.id) }));
 const notFound = plan.filter((p) => !p.ids.length).map((p) => `${p.type} ${p.number}`);
+const findSub = db.prepare("SELECT id FROM oral_exam_questions WHERE book_id = ? AND problem_type = ? AND problem_number = ? AND sub_label = ? ORDER BY blocked, created_at DESC");
+const restores = plan.filter((p) => Array.isArray(p.items)).flatMap((p) => p.items.map((item) => ({ ...item, entry: p, id: findSub.get(bookIds.get(p.book), p.type, p.number, item.sub ?? "")?.id ?? null })));
 console.log(`図つきの問題: ${plan.filter((p) => p.ids.length).length}問（小問 ${plan.reduce((n, p) => n + p.ids.length, 0)}件） / 図 ${new Set(entries.flatMap((e) => e.figures)).size}枚`);
+if (restores.length) console.log(`作り直して出題に戻す小問: ${restores.length}件（上書き ${restores.filter((r) => r.id).length}件 / 追加 ${restores.filter((r) => !r.id).length}件）`);
 if (notFound.length) console.log(`DB に無い問題（図を付けない）: ${notFound.join("、")}`);
 if (dryRun) process.exit(0);
 
@@ -39,8 +45,19 @@ copyFileSync(dbPath, path.join(dataDir, `app.db.bak-${stamp}`));
 db.exec("BEGIN IMMEDIATE");
 try {
   for (const id of bookIds.values()) db.prepare("UPDATE oral_exam_questions SET figures_json = '' WHERE book_id = ?").run(id);
+  const now = new Date().toISOString();
+  const update = db.prepare("UPDATE oral_exam_questions SET prompt = ?, model_answer = ?, speech_text = ?, blocked = 0, reviewed_at = ? WHERE id = ?");
+  const sibling = db.prepare("SELECT category, problem_type, question_kind, MAX(order_index) AS last FROM oral_exam_questions WHERE book_id = ? AND problem_type = ? AND problem_number = ?");
+  const insert = db.prepare(`INSERT INTO oral_exam_questions (id, book_id, order_index, problem_number, sub_label, problem_type, question_kind, category, prompt, model_answer, speech_text, grading_json, created_at, reviewed_at, blocked)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', ?, ?, 0)`);
+  for (const r of restores) {
+    if (r.id) { update.run(r.prompt, r.answer, r.speech ?? "", now, r.id); continue; }
+    const bookId = bookIds.get(r.entry.book); const near = sibling.get(bookId, r.entry.type, r.entry.number);
+    insert.run(crypto.randomUUID(), bookId, near?.last ?? 0, r.entry.number, r.sub ?? "", r.entry.type, near?.question_kind ?? "", near?.category ?? "", r.prompt, r.answer, r.speech ?? "", now, now);
+  }
+  const ids = db.prepare("SELECT id FROM oral_exam_questions WHERE book_id = ? AND problem_type = ? AND problem_number = ?");
   const set = db.prepare("UPDATE oral_exam_questions SET figures_json = ? WHERE id = ?");
-  for (const p of plan) for (const id of p.ids) set.run(JSON.stringify(p.figures), id);
+  for (const p of plan) for (const { id } of ids.all(bookIds.get(p.book), p.type, p.number)) set.run(JSON.stringify(p.figures), id);
   db.exec("COMMIT");
   console.log(`図の付け直し完了（バックアップ: app.db.bak-${stamp}）`);
 } catch (e) { db.exec("ROLLBACK"); throw e; }
