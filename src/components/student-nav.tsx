@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Mic, MessagesSquare, Settings } from "lucide-react";
+import { ListChecks, Mic, MessagesSquare, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { label: "AIチューター", icon: MessagesSquare, href: "/student" },
   { label: "AI口頭試問", icon: Mic, href: "/student/oral-exam" },
+  { label: "デイリーテスト", icon: ListChecks, href: "/student/daily-test" },
   { label: "設定", icon: Settings, href: "/student/settings" },
 ];
 

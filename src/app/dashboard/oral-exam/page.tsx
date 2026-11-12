@@ -5,6 +5,8 @@ import { ImportBundleDialog } from "@/components/oral-exam/import-bundle-dialog"
 import {
   ensureOralExamSeeded,
   getAssignedBooksForStudent,
+  getDailyTestSessionsForStudent,
+  jstDay,
   getOralExamBooks,
   getOralExamStudentSummary,
 } from "@/lib/db";
@@ -27,7 +29,11 @@ export default function DashboardOralExamPage() {
   const studentRows = roster.map((student) => {
     const assignedBooks = getAssignedBooksForStudent(student.id);
     const summary = getOralExamStudentSummary(student.id);
-    return { student, assignedBooks, summary };
+    const today = jstDay(new Date());
+    const dailyDoneToday = getDailyTestSessionsForStudent(student.id, 10).some(
+      (session) => jstDay(session.startedAt) === today,
+    );
+    return { student, assignedBooks, summary, dailyDoneToday };
   });
 
   return (
@@ -122,7 +128,7 @@ export default function DashboardOralExamPage() {
       <section>
         <h2 className="mb-3 text-h3 text-ivory-100">生徒別の進捗</h2>
         <div className="flex flex-col divide-y divide-border rounded-xl border border-border bg-card px-6 shadow-panel">
-          {studentRows.map(({ student, assignedBooks, summary }) => (
+          {studentRows.map(({ student, assignedBooks, summary, dailyDoneToday }) => (
             <Link
               key={student.id}
               href={`/dashboard/oral-exam/students/${student.id}`}
@@ -139,6 +145,15 @@ export default function DashboardOralExamPage() {
               <div className="flex items-center gap-4 text-caption text-slate-400">
                 <span className="tabular-nums">
                   習得 {summary.masteredCount}/{summary.totalQuestions}
+                </span>
+                <span
+                  className={
+                    dailyDoneToday
+                      ? "rounded-full border border-sage-500/25 bg-sage-500/[0.08] px-2 py-0.5 text-sage-500"
+                      : "rounded-full border border-white/10 px-2 py-0.5 text-slate-500"
+                  }
+                >
+                  デイリーテスト {dailyDoneToday ? "実施済" : "未実施"}
                 </span>
                 {summary.dueCount > 0 && (
                   <span className="flex items-center gap-1 rounded-full border border-gold-500/25 bg-gold-500/[0.08] px-2 py-0.5 text-gold-400">

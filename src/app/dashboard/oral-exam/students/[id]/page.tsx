@@ -5,6 +5,8 @@ import { MagnitudeBarList } from "@/components/magnitude-bar-list";
 import { AttemptCommentEditor } from "@/components/oral-exam/attempt-comment-editor";
 import {
   getAssignedBooksForStudent,
+  getDailyTestSessionsForStudent,
+  jstDay,
   getMasteryForBook,
   getOralExamAttempts,
   getOralExamInsight,
@@ -44,6 +46,8 @@ export default async function OralExamStudentProgressPage({
   const summary = getOralExamStudentSummary(id);
   const attempts = getOralExamAttempts(id, { limit: attemptLimit });
   const hasMoreAttempts = attempts.length >= attemptLimit;
+  const dailySessions = getDailyTestSessionsForStudent(id, 14);
+  const doneToday = dailySessions.some((session) => jstDay(session.startedAt) === jstDay(new Date()));
 
   // 新しい回答が増えた時だけAIで要約を作り直す(キャッシュがあり件数が変わっていなければ
   // 再利用する。講師がページを開くたびに課金・待ち時間が発生しないようにするため)。
@@ -137,6 +141,42 @@ export default async function OralExamStudentProgressPage({
           items={MASTERY_LEVEL_LABELS.map((label, i) => ({ label, value: levelCounts[i] }))}
           variant="uniform"
         />
+      </section>
+
+      <section className="rounded-xl border border-border bg-card p-6 shadow-panel">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-h3 text-ivory-100">デイリーテストの実施状況</h2>
+          <span
+            className={
+              doneToday
+                ? "rounded-full border border-sage-500/25 bg-sage-500/[0.08] px-2.5 py-0.5 text-caption text-sage-500"
+                : "rounded-full border border-white/10 px-2.5 py-0.5 text-caption text-slate-400"
+            }
+          >
+            {doneToday ? "今日は実施済み" : "今日は未実施"}
+          </span>
+        </div>
+        <p className="mt-1 text-body-sm text-slate-400">
+          前日にやった口頭試問の復習です。直近14回分を表示します（回答の詳細は下の回答履歴にも含まれます）。
+        </p>
+        <div className="mt-4 flex flex-col divide-y divide-border">
+          {dailySessions.length === 0 && (
+            <p className="py-6 text-center text-body-sm text-slate-500">まだ実施していません。</p>
+          )}
+          {dailySessions.map((session) => (
+            <div key={session.id} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+              <span className="text-body-sm text-ivory-200">
+                {jstDay(session.startedAt).replace(/^\d+-0?(\d+)-0?(\d+)$/, "$1月$2日")}
+              </span>
+              <span className="flex items-center gap-3 text-caption tabular-nums text-slate-400">
+                <span>
+                  正解 {session.correctCount} / {session.questionCount}問
+                </span>
+                <span className="text-slate-500">{formatRelativeTimeJa(session.startedAt)}</span>
+              </span>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section className="rounded-xl border border-border bg-card p-6 shadow-panel">

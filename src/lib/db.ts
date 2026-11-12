@@ -5,7 +5,7 @@ import path from "node:path";
 import { createHash, randomBytes, randomUUID, scryptSync } from "node:crypto";
 import { demoStudent, demoStudentQaHistory, students } from "@/lib/mock-data";
 import { demoOralExamBookSeed, reviewSampleBookSeed } from "@/lib/oral-exam-mock";
-import { isDue } from "@/lib/oral-exam-mastery";
+import { isDue, questionKind, speedLabel } from "@/lib/oral-exam-mastery";
 import { REFERENCE_BOOK_CATALOG } from "@/lib/reference-book-catalog";
 import knownProblemNumbers from "@/lib/oral-exam-problem-numbers.json";
 import type {
@@ -22,6 +22,7 @@ import type {
   OralExamQueueItem,
   OralExamGrading,
   OralExamSession,
+  OralExamSessionKind,
   MasteryResult,
   ProspectAssessment,
   ProspectAssessmentInput,
@@ -318,6 +319,7 @@ db.exec(`
     correct_count INTEGER NOT NULL DEFAULT 0
   )
 `);
+ensureColumn("oral_exam_sessions", "kind", "kind TEXT NOT NULL DEFAULT 'regular'");
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS oral_exam_attempts (
@@ -1497,6 +1499,7 @@ interface OralExamSessionRow {
   id: string;
   student_id: string;
   book_id: string;
+  kind: string;
   started_at: string;
   ended_at: string | null;
   question_count: number;
@@ -1508,6 +1511,7 @@ function sessionRowToRecord(row: OralExamSessionRow): OralExamSession {
     id: row.id,
     studentId: row.student_id,
     bookId: row.book_id,
+    kind: row.kind === "daily" ? "daily" : "regular",
     startedAt: row.started_at,
     endedAt: row.ended_at,
     questionCount: row.question_count,
@@ -1515,13 +1519,20 @@ function sessionRowToRecord(row: OralExamSessionRow): OralExamSession {
   };
 }
 
-export function createOralExamSession(studentId: string, bookId: string): OralExamSession {
+// デイリーテストは複数の参考書の問題をまたぐため、book_id には固定の印を入れる。
+export const DAILY_TEST_BOOK_ID = "daily-test";
+
+export function createOralExamSession(
+  studentId: string,
+  bookId: string,
+  kind: OralExamSessionKind = "regular",
+): OralExamSession {
   const id = randomUUID();
   const startedAt = new Date().toISOString();
   db.prepare(
-    "INSERT INTO oral_exam_sessions (id, student_id, book_id, started_at) VALUES (?, ?, ?, ?)",
-  ).run(id, studentId, bookId, startedAt);
-  return { id, studentId, bookId, startedAt, endedAt: null, questionCount: 0, correctCount: 0 };
+    "INSERT INTO oral_exam_sessions (id, student_id, book_id, kind, started_at) VALUES (?, ?, ?, ?, ?)",
+  ).run(id, studentId, bookId, kind, startedAt);
+  return { id, studentId, bookId, kind, startedAt, endedAt: null, questionCount: 0, correctCount: 0 };
 }
 
 export function touchOralExamSession(id: string, isCorrect: boolean): void {
@@ -1930,4 +1941,96 @@ function ensureReviewSampleBook(): void {
   for (const book of books) {
     assignOralExamBook(REVIEW_STUDENT_ID, book.id);
   }
+}
+
+
+// ---------------------------------------------------------------------------
+// デイリーテスト（前日にやった口頭試問の復習）
+// ---------------------------------------------------------------------------
+
+const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
+const DAILY_TEST_LOOKBACK_DAYS = 30;
+
+// サーバー（Render）は日本時間ではないため、「日」は常に日本時間で区切る
+export function jstDay(iso: string | Date): string {
+  const time = typeof iso === "string" ? new Date(iso).getTime() : iso.getTime();
+  return new Date(time + JST_OFFSET_MS).toISOString().slice(0, 10);
+}
+
+export type DailyTestReason = "incorrect" | "slow" | "correct";
+
+export interface DailyTestCandidate {
+  item: OralExamQueueItem;
+  bookTitle: string;
+  reason: DailyTestReason;
+}
+
+export interface DailyTestSource {
+  // 出題元の日（日本時間 YYYY-MM-DD）。前日に記録が無いときは、直近で取り組んだ日になる。
+  day: string;
+  isYesterday: boolean;
+  candidates: DailyTestCandidate[];
+}
+
+const REASON_RANK: Record<DailyTestReason, number> = { incorrect: 0, slow: 1, correct: 2 };
+
+// 前日（無ければ直近）の口頭試問で解いた問題を、間違い→時間がかかった→正解の順に並べて返す。
+// デイリーテスト自体の解答は元データに含めない（復習の復習が連鎖しないように）。
+export function getDailyTestSource(studentId: string, now: Date = new Date()): DailyTestSource | null {
+  const since = new Date(now.getTime() - DAILY_TEST_LOOKBACK_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const rows = db
+    .prepare(
+      `SELECT question_id, is_correct, response_time_ms, created_at FROM oral_exam_attempts
+       WHERE student_id = ? AND created_at >= ?
+         AND session_id NOT IN (SELECT id FROM oral_exam_sessions WHERE kind = 'daily')
+       ORDER BY created_at ASC`,
+    )
+    .all(studentId, since) as { question_id: string; is_correct: number; response_time_ms: number; created_at: string }[];
+
+  const today = jstDay(now);
+  const days = [...new Set(rows.map((row) => jstDay(row.created_at)).filter((day) => day < today))].sort();
+  const day = days[days.length - 1];
+  if (!day) return null;
+
+  const byQuestion = new Map<string, typeof rows>();
+  for (const row of rows) {
+    if (jstDay(row.created_at) !== day) continue;
+    byQuestion.set(row.question_id, [...(byQuestion.get(row.question_id) ?? []), row]);
+  }
+
+  const bookCache = new Map<string, OralExamBook | null>();
+  const candidates: DailyTestCandidate[] = [];
+  for (const [questionId, attempts] of byQuestion) {
+    const question = getOralExamQuestion(questionId);
+    if (!question || question.blocked) continue;
+    if (!bookCache.has(question.bookId)) bookCache.set(question.bookId, getOralExamBook(question.bookId));
+    const book = bookCache.get(question.bookId) ?? null;
+
+    const last = attempts[attempts.length - 1];
+    const kind = questionKind(question, book?.subject);
+    const reason: DailyTestReason = attempts.some((a) => a.is_correct === 0)
+      ? "incorrect"
+      : speedLabel(last.response_time_ms, kind) === "じっくり"
+        ? "slow"
+        : "correct";
+    candidates.push({
+      item: { question, mastery: getMastery(studentId, questionId) },
+      bookTitle: book?.title ?? "",
+      reason,
+    });
+  }
+  candidates.sort((a, b) => REASON_RANK[a.reason] - REASON_RANK[b.reason]);
+
+  return { day, isYesterday: day === jstDay(new Date(now.getTime() - 24 * 60 * 60 * 1000)), candidates };
+}
+
+export function getDailyTestSessionsForStudent(studentId: string, limit = 30): OralExamSession[] {
+  const rows = db
+    .prepare(
+      `SELECT * FROM oral_exam_sessions
+       WHERE student_id = ? AND kind = 'daily' AND question_count > 0
+       ORDER BY started_at DESC LIMIT ?`,
+    )
+    .all(studentId, limit) as unknown as OralExamSessionRow[];
+  return rows.map(sessionRowToRecord);
 }

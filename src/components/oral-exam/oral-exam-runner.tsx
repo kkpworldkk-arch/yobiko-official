@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   ChevronDown,
   Keyboard,
+  ListChecks,
   Loader2,
   Mic,
   MicOff,
@@ -194,7 +195,38 @@ function RangeSelect({
 
 type Stage = "loading" | "no-books" | "idle" | "active" | "feedback" | "complete" | "all-clear";
 
-export default function OralExamPage() {
+interface DailyCandidate {
+  id: string;
+  bookTitle: string;
+  category: string;
+  problemNumber: number | null;
+  subLabel: string;
+  problemType: string;
+  prompt: string;
+  reason: "incorrect" | "slow" | "correct";
+}
+
+interface DailySource {
+  day: string;
+  isYesterday: boolean;
+  candidates: DailyCandidate[];
+}
+
+const DAILY_MAX_QUESTIONS = 10;
+const DAILY_REASON_LABEL: Record<DailyCandidate["reason"], string> = {
+  incorrect: "間違えた",
+  slow: "時間がかかった",
+  correct: "正解",
+};
+
+// "2026-11-11" → "11月11日"
+function formatDay(day: string): string {
+  const [, month, date] = day.split("-").map(Number);
+  return `${month}月${date}日`;
+}
+
+// books: 参考書を選んで取り組む通常の口頭試問 / daily: 前日の口頭試問を復習するデイリーテスト
+export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
   const [books, setBooks] = useState<OralExamBook[]>([]);
   const [selectedBookId, setSelectedBookId] = useState<string>("");
   const [filterOptions, setFilterOptions] = useState<Record<string, OralExamFilterOptions>>({});
@@ -208,6 +240,8 @@ export default function OralExamPage() {
     problemType: "",
   });
   const [stage, setStage] = useState<Stage>("loading");
+  const [dailySource, setDailySource] = useState<DailySource | null>(null);
+  const [dailySelected, setDailySelected] = useState<Set<string>>(new Set());
 
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [queue, setQueue] = useState<QueueQuestion[]>([]);
@@ -298,6 +332,17 @@ export default function OralExamPage() {
   }
 
   useEffect(() => {
+    if (mode === "daily") {
+      fetch("/api/daily-test")
+        .then((res) => res.json())
+        .then((data: { source: DailySource | null }) => {
+          setDailySource(data.source ?? null);
+          setStage(data.source ? "idle" : "no-books");
+        })
+        .catch(() => setStage("no-books"));
+      loadHistory(historyLimit);
+      return;
+    }
     fetch("/api/oral-exam/books")
       .then((res) => res.json())
       .then((data: { books: OralExamBook[]; filterOptions?: Record<string, OralExamFilterOptions> }) => {
@@ -478,6 +523,52 @@ export default function OralExamPage() {
     }
   }
 
+  function toggleDailySelected(id: string) {
+    setDailySelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else if (next.size < DAILY_MAX_QUESTIONS) {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  async function startDailySession(startMode: "random" | "select") {
+    setStage("loading");
+    setSessionLog([]);
+    setErrorMessage(null);
+    try {
+      const res = await fetch("/api/daily-test/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: startMode,
+          questionIds: startMode === "select" ? [...dailySelected] : undefined,
+        }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(data?.error ?? "デイリーテストを開始できませんでした。");
+      }
+      const data: { session: { id: string }; queue: QueueQuestion[] } = await res.json();
+      setSessionId(data.session.id);
+      setQueue(data.queue);
+      setCurrentIndex(0);
+      resetAnswerState();
+      if (data.queue.length === 0) {
+        setStage("all-clear");
+        return;
+      }
+      presentQuestion(data.queue[0]);
+      setStage("active");
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "開始に失敗しました。時間をおいて再度お試しください。");
+      setStage("idle");
+    }
+  }
+
   const canSubmit =
     activeMode === "handwriting" ? hasDrawing : answerText.trim().length > 0;
 
@@ -557,13 +648,13 @@ export default function OralExamPage() {
     <div className="flex flex-col gap-8">
       <section>
         <p className="text-eyebrow uppercase tracking-[0.24em] text-gold-400/90">
-          AI Oral Examination
+          {mode === "daily" ? "Daily Test" : "AI Oral Examination"}
         </p>
-        <h1 className="mt-2.5 text-h1 text-ivory-100">AI口頭試問</h1>
+        <h1 className="mt-2.5 text-h1 text-ivory-100">{mode === "daily" ? "デイリーテスト" : "AI口頭試問"}</h1>
         <p className="mt-2 text-body-sm text-slate-400">
-          参考書を1冊極めるための一問一答ドリルです。音声で問題が読み上げられます。答えられたら
-          音声・手書き・キーボードのいずれかで回答してください。反応時間も記録し、無意識に答えられる
-          レベルまで定着したかを追跡します。
+          {mode === "daily"
+            ? "前日にやった口頭試問の復習です。間違えた問題と時間がかかった問題を優先して出題します。答え方は口頭試問と同じで、音声・手書き・キーボードのいずれかで回答してください。"
+            : "参考書を1冊極めるための一問一答ドリルです。音声で問題が読み上げられます。答えられたら音声・手書き・キーボードのいずれかで回答してください。反応時間も記録し、無意識に答えられるレベルまで定着したかを追跡します。"}
         </p>
       </section>
 
@@ -577,13 +668,103 @@ export default function OralExamPage() {
         <section className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-white/10 bg-card py-16 text-center">
           <Sparkles className="size-6 text-slate-500" strokeWidth={1.5} />
           <p className="text-body-sm text-slate-400">
-            まだ参考書が割り当てられていません。担当講師が教材を準備するまでお待ちください。
+            {mode === "daily"
+              ? "復習できる口頭試問の記録がまだありません。先にAI口頭試問に取り組むと、翌日からデイリーテストに挑戦できます。"
+              : "まだ参考書が割り当てられていません。担当講師が教材を準備するまでお待ちください。"}
           </p>
         </section>
       )}
 
-      {stage !== "loading" && stage !== "no-books" && books.length > 0 && (
+      {stage !== "loading" && stage !== "no-books" && (mode === "daily" || books.length > 0) && (
         <section className="rounded-xl border border-border bg-card p-6 shadow-panel">
+          {mode === "daily" && dailySource && (stage === "idle" || stage === "complete" || stage === "all-clear") && (
+            <div>
+              <p className="text-body-sm text-ivory-100">
+                {dailySource.isYesterday ? "昨日" : `直近（${formatDay(dailySource.day)}）`}
+                に取り組んだ{dailySource.candidates.length}問から出題します。
+              </p>
+              <Button
+                type="button"
+                onClick={() => startDailySession("random")}
+                className="mt-4 h-11 w-full gap-1.5 bg-gold-500 px-5 text-body-sm font-medium text-navy-950 shadow-gold-glow hover:bg-gold-400 sm:w-auto"
+              >
+                <Sparkles className="size-4" />
+                おまかせで始める（最大{DAILY_MAX_QUESTIONS}問）
+              </Button>
+              <p className="mt-2 text-caption text-slate-500">
+                間違えた問題 → 時間がかかった問題 → 正解した問題の順に集め、出す順番はランダムです。
+              </p>
+
+              <div className="mt-6 border-t border-white/[0.06] pt-5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="flex items-center gap-1.5 text-caption text-slate-400">
+                    <ListChecks className="size-4" strokeWidth={1.75} />
+                    復習する問題を自分で選ぶ（最大{DAILY_MAX_QUESTIONS}問）
+                  </p>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={dailySelected.size === 0}
+                    onClick={() => startDailySession("select")}
+                    className="h-10 px-4 text-body-sm"
+                  >
+                    選んだ{dailySelected.size}問で始める
+                  </Button>
+                </div>
+                <ul className="mt-3 flex flex-col gap-2">
+                  {dailySource.candidates.map((candidate) => {
+                    const checked = dailySelected.has(candidate.id);
+                    const disabled = !checked && dailySelected.size >= DAILY_MAX_QUESTIONS;
+                    return (
+                      <li key={candidate.id}>
+                        <button
+                          type="button"
+                          aria-pressed={checked}
+                          disabled={disabled}
+                          onClick={() => toggleDailySelected(candidate.id)}
+                          className={`flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors disabled:opacity-40 ${
+                            checked ? "border-gold-500/50 bg-gold-500/[0.08]" : "border-white/[0.06] bg-navy-800/60"
+                          }`}
+                        >
+                          <span
+                            className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded border ${
+                              checked ? "border-gold-400 bg-gold-500 text-navy-950" : "border-slate-500"
+                            }`}
+                          >
+                            {checked && <CheckCircle2 className="size-3.5" strokeWidth={2.5} />}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="flex flex-wrap items-center gap-2 text-caption text-slate-500">
+                              <span
+                                className={
+                                  candidate.reason === "incorrect"
+                                    ? "text-crimson-500"
+                                    : candidate.reason === "slow"
+                                      ? "text-amber-300"
+                                      : "text-sage-500"
+                                }
+                              >
+                                {DAILY_REASON_LABEL[candidate.reason]}
+                              </span>
+                              <span className="truncate">
+                                {candidate.bookTitle}
+                                {candidate.problemNumber !== null
+                                  ? ` ・ ${candidate.problemType ? `${candidate.problemType} ` : "問題 "}${candidate.problemNumber}${candidate.subLabel ? ` ${candidate.subLabel}` : ""}`
+                                  : ""}
+                              </span>
+                            </span>
+                            <span className="mt-1 line-clamp-2 block text-body-sm text-ivory-200">{candidate.prompt}</span>
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {mode === "books" && (<>
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div className="flex flex-col gap-1.5">
               <span className="text-caption text-slate-400">参考書を選ぶ</span>
@@ -696,6 +877,8 @@ export default function OralExamPage() {
               )}
             </div>
           </div>
+
+          </>)}
 
           {errorMessage && stage === "idle" && (
             <p className="mt-3 text-caption text-crimson-500">{errorMessage}</p>

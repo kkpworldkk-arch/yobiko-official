@@ -197,10 +197,14 @@ export interface OralExamMastery {
   nextReviewAt: string | null;
 }
 
+// regular: 参考書を選んで取り組む通常の口頭試問 / daily: 前日の復習（複数の参考書をまたぐ）
+export type OralExamSessionKind = "regular" | "daily";
+
 export interface OralExamSession {
   id: string;
   studentId: string;
   bookId: string;
+  kind: OralExamSessionKind;
   startedAt: string;
   endedAt: string | null;
   questionCount: number;

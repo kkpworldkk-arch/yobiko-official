@@ -112,7 +112,8 @@ export async function POST(request: NextRequest) {
     !examSession ||
     !question ||
     examSession.studentId !== studentId ||
-    examSession.bookId !== question.bookId
+    // デイリーテストは複数の参考書をまたぐので、参考書の一致は確かめない
+    (examSession.kind !== "daily" && examSession.bookId !== question.bookId)
   ) {
     return NextResponse.json({ error: "セッションまたは問題が見つかりません" }, { status: 404 });
   }
