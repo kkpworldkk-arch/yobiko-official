@@ -72,10 +72,10 @@ export function ImportBundleDialog({ bookTitles }: { bookTitles: string[] }) {
             <select
               id="bundle-book"
               name="book"
-              required
-              defaultValue={bookTitles.includes("化学頻出スタンダード問題230選") ? "化学頻出スタンダード問題230選" : undefined}
+              defaultValue=""
               className="h-9 rounded-lg border border-white/10 bg-navy-800 px-3 text-body-sm text-ivory-100"
             >
+              <option value="">指定しない（図の対応表を取り込むとき。黄チャート3冊もまとめて反映）</option>
               {bookTitles.map((title) => (
                 <option key={title} value={title}>{title}</option>
               ))}
