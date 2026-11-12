@@ -103,7 +103,7 @@
 `python scripts/yellow-chart-merge-reviews.py` → `python scripts/yellow-chart-v2.py` → v2.json から `v2-as-rebuilt.jsonl` を作る → `node scripts/apply-yellow-chart.mjs --build-rebuilt data/yellow-chart/v2-as-rebuilt.jsonl`。
 
 **図（2026年11月12日）**
-- 問題に図がある51例題に、紙面から切り出した図54枚を付けた（数学I 12、数学A 28、数学B 1、数学III 10、数学C 4 例題。小問は72件）。対象はすべてのページを見て Claude が選んだ。
+- 問題に図がある51例題に、紙面から切り出した図54枚を付けた（数学I 10、数学A 27、数学B 1、数学III 9、数学C 4 例題。小問は72件）。対象はすべてのページを見て Claude が選んだ。
 - 置き場所：`data/oral-exam-figures/yellow-chart/`。どの例題にどの図を付けるかは `data/oral-exam-figures/yellow-chart-figures.json`。問題文や習熟度は変えず、図だけを付ける（`scripts/set-oral-exam-figures.mjs`）。
 - 本番への反映：PC で `cd C:\滝原塾アプリ開発\data; tar czf yellow-chart-update.tar.gz oral-exam-figures/yellow-chart -C oral-exam-figures yellow-chart-figures.json` → 講師画面「口頭試問」→「図つきデータの取り込み」で `yellow-chart-update.tar.gz` を選び、「件数を確認する」で「図つきの問題: 51問」を確かめてから「取り込む」（参考書の選択は関係ない）。
 - 図が無いせいで出題しない13例題（上の一覧）のうち、数学I 52, 106, 126, 146, 147、数学A 15, 28, 51, 88, 99 は図を用意した。問題文と答えを紙面と照らし合わせて作り直せば、出題に戻せる（未対応）。
