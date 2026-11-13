@@ -6,6 +6,7 @@ import {
   deleteFamilyAccount,
   getUserById,
   insertStudentFeedback,
+  markAnnouncementRead,
   setUserAiConsent,
   updateUserPassword,
 } from "@/lib/db";
@@ -94,6 +95,13 @@ export async function withdrawAiConsent(): Promise<void> {
   const session = await getSession();
   if (!session) redirect("/login");
   setUserAiConsent(session.userId, false);
+  revalidatePath("/student", "layout");
+}
+
+export async function acknowledgeAnnouncement(announcementId: string): Promise<void> {
+  const session = await getSession();
+  if (!session) redirect("/login");
+  markAnnouncementRead(announcementId, session.userId);
   revalidatePath("/student", "layout");
 }
 

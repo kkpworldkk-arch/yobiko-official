@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
+import { AnnouncementBanner } from "@/components/announcement-banner";
 import { AiConsentGate } from "@/components/ai-consent-gate";
 import { NativeAppBridge } from "@/components/native-app-bridge";
 import { StudentNav } from "@/components/student-nav";
 import { StudentUserMenu } from "@/components/student-user-menu";
-import { hasUserAiConsent } from "@/lib/db";
+import { getUnreadAnnouncementsForUser, hasUserAiConsent } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { resolveStudentIdentity } from "@/lib/student-identity";
 
@@ -41,6 +42,13 @@ export default async function StudentLayout({
       </header>
 
       <main className="mx-auto max-w-3xl px-6 py-10 sm:px-10">
+        <AnnouncementBanner
+          announcements={getUnreadAnnouncementsForUser(session.userId).map(({ id, title, body }) => ({
+            id,
+            title,
+            body,
+          }))}
+        />
         <AiConsentGate consented={hasUserAiConsent(session.userId)}>{children}</AiConsentGate>
       </main>
     </div>

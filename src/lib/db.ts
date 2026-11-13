@@ -2034,3 +2034,114 @@ export function getDailyTestSessionsForStudent(studentId: string, limit = 30): O
     .all(studentId, limit) as unknown as OralExamSessionRow[];
   return rows.map(sessionRowToRecord);
 }
+
+// 事務所からのお知らせ。book_id を指定すると、その参考書が割り当てられた生徒にだけ出す。
+// 生徒が「確認しました」を押すと announcement_reads に記録し、その生徒には二度と出さない。
+db.exec(`
+  CREATE TABLE IF NOT EXISTS announcements (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    book_id TEXT,
+    created_at TEXT NOT NULL,
+    active INTEGER NOT NULL DEFAULT 1
+  )
+`);
+db.exec(`
+  CREATE TABLE IF NOT EXISTS announcement_reads (
+    announcement_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    read_at TEXT NOT NULL,
+    PRIMARY KEY (announcement_id, user_id)
+  )
+`);
+
+export interface Announcement {
+  id: string;
+  title: string;
+  body: string;
+  bookId: string | null;
+  bookTitle: string | null;
+  createdAt: string;
+  active: boolean;
+  readCount: number;
+}
+
+interface AnnouncementRow {
+  id: string;
+  title: string;
+  body: string;
+  book_id: string | null;
+  book_title: string | null;
+  created_at: string;
+  active: number;
+  read_count: number;
+}
+
+function announcementRowToRecord(row: AnnouncementRow): Announcement {
+  return {
+    id: row.id,
+    title: row.title,
+    body: row.body,
+    bookId: row.book_id,
+    bookTitle: row.book_title,
+    createdAt: row.created_at,
+    active: Boolean(row.active),
+    readCount: row.read_count,
+  };
+}
+
+export function insertAnnouncement(input: {
+  title: string;
+  body: string;
+  bookId: string | null;
+}): void {
+  db.prepare(
+    "INSERT INTO announcements (id, title, body, book_id, created_at, active) VALUES (?, ?, ?, ?, ?, 1)",
+  ).run(randomUUID(), input.title, input.body, input.bookId, new Date().toISOString());
+}
+
+export function setAnnouncementActive(id: string, active: boolean): void {
+  db.prepare("UPDATE announcements SET active = ? WHERE id = ?").run(active ? 1 : 0, id);
+}
+
+export function getAllAnnouncements(): Announcement[] {
+  const rows = db
+    .prepare(
+      `SELECT a.*, b.title AS book_title,
+              (SELECT COUNT(*) FROM announcement_reads r WHERE r.announcement_id = a.id) AS read_count
+       FROM announcements a LEFT JOIN oral_exam_books b ON b.id = a.book_id
+       ORDER BY a.created_at DESC`,
+    )
+    .all() as unknown as AnnouncementRow[];
+  return rows.map(announcementRowToRecord);
+}
+
+// そのアカウントがまだ確認していない、公開中のお知らせ（古い順）。
+export function getUnreadAnnouncementsForUser(userId: string): Announcement[] {
+  const studentId = getStudentIdForUser(userId);
+  const rows = db
+    .prepare(
+      `SELECT a.*, NULL AS book_title, 0 AS read_count
+       FROM announcements a
+       WHERE a.active = 1
+         AND NOT EXISTS (
+           SELECT 1 FROM announcement_reads r WHERE r.announcement_id = a.id AND r.user_id = ?
+         )
+         AND (
+           a.book_id IS NULL
+           OR EXISTS (
+             SELECT 1 FROM oral_exam_assignments s WHERE s.book_id = a.book_id AND s.student_id = ?
+           )
+         )
+       ORDER BY a.created_at ASC`,
+    )
+    .all(userId, studentId ?? "") as unknown as AnnouncementRow[];
+  return rows.map(announcementRowToRecord);
+}
+
+export function markAnnouncementRead(announcementId: string, userId: string): void {
+  db.prepare(
+    "INSERT OR IGNORE INTO announcement_reads (announcement_id, user_id, read_at) VALUES (?, ?, ?)",
+  ).run(announcementId, userId, new Date().toISOString());
+}

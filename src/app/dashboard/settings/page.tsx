@@ -1,8 +1,11 @@
-import { CheckCircle2, CircleAlert, Database, KeyRound, MessageSquareText } from "lucide-react";
+import { CheckCircle2, CircleAlert, Database, KeyRound, Megaphone, MessageSquareText } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { AnnouncementActiveToggle } from "@/components/announcement-active-toggle";
 import { StudentFeedbackResolveToggle } from "@/components/student-feedback-resolve-toggle";
 import { PasskeyButton } from "@/components/passkey-button";
-import { getAllStudentFeedback } from "@/lib/db";
+import { createAnnouncement } from "@/app/actions/teacher-settings";
+import { Button } from "@/components/ui/button";
+import { getAllAnnouncements, getAllStudentFeedback, getOralExamBooks } from "@/lib/db";
 import { formatRelativeTimeJa } from "@/lib/format";
 import { getSession } from "@/lib/session";
 
@@ -13,6 +16,8 @@ export default async function SettingsPage() {
   const session = await getSession();
   const teacherName = session?.name ?? "講師";
   const feedback = getAllStudentFeedback();
+  const announcements = getAllAnnouncements();
+  const books = getOralExamBooks();
 
   return (
     <div className="flex flex-col gap-6">
@@ -101,6 +106,74 @@ export default async function SettingsPage() {
           Face ID、Touch ID、Windows Helloなどをこの端末のログインに使えます。
         </p>
         <PasskeyButton mode="register" />
+      </section>
+
+      <section id="announcements" className="scroll-mt-6 rounded-xl border border-border bg-card p-6 shadow-panel">
+        <h2 className="flex items-center gap-2 text-h3 text-ivory-100">
+          <Megaphone className="size-4.5 text-slate-400" strokeWidth={1.75} />
+          事務所からのお知らせ
+        </h2>
+        <p className="mt-1 mb-4 text-body-sm text-slate-400">
+          生徒がアプリを開くと、画面の上に出ます。生徒が「確認しました」を押すと、その生徒には二度と出ません。
+        </p>
+        <form action={createAnnouncement} className="flex flex-col gap-3">
+          <input
+            name="title"
+            required
+            maxLength={100}
+            placeholder="タイトル（例：生物基礎の口頭試問について）"
+            className="h-10 rounded-lg border border-border bg-navy-800/60 px-3 text-body-sm text-ivory-100 placeholder:text-slate-500 outline-none focus:border-gold-500/40"
+          />
+          <textarea
+            name="body"
+            required
+            maxLength={2000}
+            rows={5}
+            placeholder="本文"
+            className="rounded-lg border border-border bg-navy-800/60 px-3 py-2 text-body-sm text-ivory-100 placeholder:text-slate-500 outline-none focus:border-gold-500/40"
+          />
+          <label className="flex flex-col gap-1.5 text-caption text-slate-400">
+            出す相手
+            <select
+              name="bookId"
+              defaultValue=""
+              className="h-10 rounded-lg border border-border bg-navy-800/60 px-3 text-body-sm text-ivory-100 outline-none focus:border-gold-500/40"
+            >
+              <option value="">全員</option>
+              {books.map((book) => (
+                <option key={book.id} value={book.id}>
+                  「{book.title}」が割り当てられた生徒だけ
+                </option>
+              ))}
+            </select>
+          </label>
+          <div>
+            <Button
+              type="submit"
+              className="h-10 bg-gold-500 px-5 text-body-sm font-medium text-navy-950 hover:bg-gold-400"
+            >
+              お知らせを出す
+            </Button>
+          </div>
+        </form>
+
+        {announcements.length > 0 && (
+          <div className="mt-6 flex flex-col divide-y divide-border border-t border-border">
+            {announcements.map((item) => (
+              <div key={item.id} className="flex flex-col gap-1.5 py-4 last:pb-0">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-body-sm font-medium text-ivory-100">{item.title}</span>
+                  <AnnouncementActiveToggle id={item.id} initialActive={item.active} />
+                </div>
+                <p className="text-caption text-slate-500">
+                  {formatRelativeTimeJa(item.createdAt)}・
+                  {item.bookTitle ? `対象：${item.bookTitle}` : "対象：全員"}・確認済み {item.readCount}人
+                </p>
+                <p className="whitespace-pre-line text-body-sm text-ivory-200">{item.body}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section id="feedback" className="scroll-mt-6 rounded-xl border border-border bg-card p-6 shadow-panel">
