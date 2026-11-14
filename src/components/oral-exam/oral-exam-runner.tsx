@@ -269,6 +269,10 @@ export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
   const [isLoadingMoreHistory, setIsLoadingMoreHistory] = useState(false);
   const [expandedAttempts, setExpandedAttempts] = useState<Set<string>>(new Set());
 
+  const [correctionOpen, setCorrectionOpen] = useState(false);
+  const [correctionText, setCorrectionText] = useState("");
+  const [isCorrecting, setIsCorrecting] = useState(false);
+
   const [flagOpen, setFlagOpen] = useState(false);
   const [flagComment, setFlagComment] = useState("");
   const [isFlagging, setIsFlagging] = useState(false);
@@ -375,12 +379,40 @@ export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
     setInterimTranscript("");
     setErrorMessage(null);
     setResult(null);
+    setCorrectionOpen(false);
     setFlagOpen(false);
     setFlagComment("");
     setIsFlagging(false);
     setFlagDone(false);
     if (isRecording) stopRecording();
     handwritingRef.current?.clear();
+  }
+
+  // AIが読み間違えた手書きの文字を直し、直した内容で採点し直す
+  async function submitCorrection() {
+    if (!result || isCorrecting || !correctionText.trim()) return;
+    setIsCorrecting(true);
+    setErrorMessage(null);
+    try {
+      const res = await fetch("/api/oral-exam/attempt/correct", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ attemptId: result.attempt.id, correctedText: correctionText }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(data?.error ?? "読み取りの修正に失敗しました。");
+      }
+      const data: { attempt: OralExamAttempt; source: "claude" | "demo"; mastery: AttemptResult["mastery"] } = await res.json();
+      const updated: AttemptResult = { ...result, attempt: data.attempt, source: data.source, mastery: data.mastery };
+      setResult(updated);
+      setSessionLog((prev) => prev.map((entry) => (entry.attempt.id === data.attempt.id ? updated : entry)));
+      setCorrectionOpen(false);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "読み取りの修正に失敗しました。");
+    } finally {
+      setIsCorrecting(false);
+    }
   }
 
   async function submitFlag() {
@@ -1172,11 +1204,58 @@ export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
                     <Badge variant="outline">習熟度: {result.mastery.label}</Badge>
                   </div>
 
-                  {result.attempt.inputMode === "handwriting" && result.attempt.answerText && (
-                    <p className="rounded-lg border border-white/[0.05] bg-navy-800/60 px-3.5 py-2.5 text-body-sm text-slate-300">
-                      <span className="text-slate-500">AIの読み取り: </span>
-                      {result.attempt.answerText}
-                    </p>
+                  {result.attempt.inputMode === "handwriting" && (
+                    <div className="rounded-lg border border-white/[0.05] bg-navy-800/60 px-3.5 py-2.5 text-body-sm text-slate-300">
+                      {!correctionOpen ? (
+                        <>
+                          <p>
+                            <span className="text-slate-500">
+                              {result.attempt.transcriptionCorrected ? "あなたが直した文字: " : "AIの読み取り: "}
+                            </span>
+                            {result.attempt.answerText || "（読み取れませんでした）"}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCorrectionText(result.attempt.answerText);
+                              setCorrectionOpen(true);
+                            }}
+                            className="mt-1.5 text-caption text-gold-400 underline-offset-2 hover:underline"
+                          >
+                            {result.attempt.transcriptionCorrected ? "もう一度直す" : "字が違って読まれた？ 読み取りを直して採点し直す"}
+                          </button>
+                        </>
+                      ) : (
+                        <div className="flex flex-col gap-2">
+                          <p className="text-caption text-slate-400">
+                            自分が書いた内容に直してください。直した内容で採点し直し、次回からAIがあなたの字を読むときの参考にします。
+                          </p>
+                          <Textarea
+                            value={correctionText}
+                            onChange={(event) => setCorrectionText(event.target.value)}
+                            className="min-h-16 text-body-sm"
+                          />
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              onClick={() => setCorrectionOpen(false)}
+                              className="h-9 px-3 text-caption"
+                            >
+                              キャンセル
+                            </Button>
+                            <Button
+                              type="button"
+                              onClick={submitCorrection}
+                              disabled={isCorrecting || !correctionText.trim()}
+                              className="h-9 px-3 text-caption"
+                            >
+                              {isCorrecting ? <Loader2 className="size-3.5 animate-spin" strokeWidth={1.75} /> : "この内容で採点し直す"}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   )}
 
                   <p className="text-body leading-relaxed text-ivory-100">

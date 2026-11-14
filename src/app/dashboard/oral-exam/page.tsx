@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { BookOpen, BookMarked, Clock3, Mic, ScanLine, Users } from "lucide-react";
+import { BookOpen, BookMarked, ChevronRight, Clock3, Mic, ScanLine, Users } from "lucide-react";
 import { CreateBookDialog } from "@/components/oral-exam/create-book-dialog";
 import { ImportBundleDialog } from "@/components/oral-exam/import-bundle-dialog";
 import {
   ensureOralExamSeeded,
   getAssignedBooksForStudent,
   getDailyTestSessionsForStudent,
+  getTodayOralExamResults,
   jstDay,
   getOralExamBooks,
   getOralExamStudentSummary,
@@ -26,6 +27,10 @@ export default function DashboardOralExamPage() {
   const catalogBooks = books.filter((book) => catalogTitles.has(book.title));
   const catalogQuestionCount = catalogBooks.reduce((total, book) => total + book.questionCount, 0);
 
+  const todayResults = getTodayOralExamResults();
+  const todayTotal = todayResults.reduce((sum, r) => sum + r.total, 0);
+  const todayCorrect = todayResults.reduce((sum, r) => sum + r.correct, 0);
+
   const studentRows = roster.map((student) => {
     const assignedBooks = getAssignedBooksForStudent(student.id);
     const summary = getOralExamStudentSummary(student.id);
@@ -38,6 +43,21 @@ export default function DashboardOralExamPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <Link
+        href="/dashboard/oral-exam/today"
+        className="flex items-center justify-between gap-3 rounded-xl border border-gold-500/20 bg-gold-500/[0.05] px-6 py-4 shadow-panel transition-colors duration-300 hover:border-gold-500/40"
+      >
+        <span>
+          <span className="block text-h3 text-ivory-100">今日の口頭試問の結果</span>
+          <span className="mt-0.5 block text-body-sm text-slate-300">
+            {todayTotal > 0
+              ? `今日は${todayResults.length}名が${todayTotal}問に回答（正答率${Math.round((todayCorrect / todayTotal) * 100)}%）。生徒別の結果と間違えた問題を確認できます。`
+              : "今日はまだ回答がありません。生徒別の結果と間違えた問題は、ここから確認できます。"}
+          </span>
+        </span>
+        <ChevronRight className="size-5 shrink-0 text-gold-400" strokeWidth={1.75} />
+      </Link>
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-h1 text-ivory-100">口頭試問</h1>

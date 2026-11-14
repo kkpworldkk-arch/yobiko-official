@@ -6,6 +6,7 @@ import { AttemptCommentEditor } from "@/components/oral-exam/attempt-comment-edi
 import {
   getAssignedBooksForStudent,
   getDailyTestSessionsForStudent,
+  getHandwritingReadingStats,
   jstDay,
   getMasteryForBook,
   getOralExamAttempts,
@@ -46,6 +47,7 @@ export default async function OralExamStudentProgressPage({
   const summary = getOralExamStudentSummary(id);
   const attempts = getOralExamAttempts(id, { limit: attemptLimit });
   const hasMoreAttempts = attempts.length >= attemptLimit;
+  const handwriting = getHandwritingReadingStats(id);
   const dailySessions = getDailyTestSessionsForStudent(id, 14);
   const doneToday = dailySessions.some((session) => jstDay(session.startedAt) === jstDay(new Date()));
 
@@ -143,6 +145,16 @@ export default async function OralExamStudentProgressPage({
         />
       </section>
 
+      {handwriting.total > 0 && (
+        <section className="rounded-xl border border-border bg-card p-6 shadow-panel">
+          <h2 className="text-h3 text-ivory-100">手書き回答のAI読み取り</h2>
+          <p className="mt-1 text-body-sm text-slate-400">
+            手書き {handwriting.total}件のうち、生徒が「読み間違い」として直したのは {handwriting.corrected}件
+            （{Math.round((handwriting.corrected / handwriting.total) * 100)}%）です。直された内容は、この生徒の次回以降の読み取りでAIの手がかりになります。
+          </p>
+        </section>
+      )}
+
       <section className="rounded-xl border border-border bg-card p-6 shadow-panel">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-h3 text-ivory-100">デイリーテストの実施状況</h2>
@@ -198,7 +210,12 @@ export default async function OralExamStudentProgressPage({
               </div>
               <p className="text-body-sm text-ivory-200">{attempt.questionPrompt}</p>
               {attempt.answerText && (
-                <p className="text-caption text-slate-400">回答: {attempt.answerText}</p>
+                <p className="text-caption text-slate-400">
+                  {attempt.transcriptionCorrected ? "回答（生徒が読み取りを訂正）" : "回答"}: {attempt.answerText}
+                </p>
+              )}
+              {attempt.transcriptionCorrected && attempt.aiTranscription && (
+                <p className="text-caption text-amber-300">AIの最初の読み取り: {attempt.aiTranscription}</p>
               )}
               {attempt.answerImageDataUrl && (
                 <a

@@ -1,6 +1,7 @@
 import { ChevronRight, MessagesSquare, Sparkles, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { StatTile } from "@/components/stat-tile";
+import { getTodayOralExamResults } from "@/lib/db";
 import { StatusBadge } from "@/components/status-badge";
 import { MagnitudeBarList } from "@/components/magnitude-bar-list";
 import { StudentCard } from "@/components/student-card";
@@ -24,6 +25,9 @@ export default function DashboardPage() {
   const totalQuestionsLast14Days = getLiveTotalQuestionsLast14Days();
   const { count: todaysNewQuestions, deltaLabel: todaysNewQuestionsDelta } =
     getLiveTodaysNewQuestions();
+  const todayResults = getTodayOralExamResults();
+  const todayTotal = todayResults.reduce((sum, r) => sum + r.total, 0);
+  const todayCorrect = todayResults.reduce((sum, r) => sum + r.correct, 0);
   const subjectTotals = getLiveSubjectTotals();
   const stumbleTotals = getLiveStumbleTotals();
   const priorityQueue = [...students]
@@ -66,6 +70,21 @@ export default function DashboardPage() {
           icon={MessagesSquare}
         />
       </section>
+
+      <Link
+        href="/dashboard/oral-exam/today"
+        className="flex items-center justify-between gap-3 rounded-xl border border-gold-500/20 bg-gold-500/[0.05] px-6 py-4 shadow-panel transition-colors duration-300 hover:border-gold-500/40"
+      >
+        <span>
+          <span className="block text-h3 text-ivory-100">今日の口頭試問の結果</span>
+          <span className="mt-0.5 block text-body-sm text-slate-300">
+            {todayTotal > 0
+              ? `今日は${todayResults.length}名が${todayTotal}問に回答（正答率${Math.round((todayCorrect / todayTotal) * 100)}%）`
+              : "今日はまだ回答がありません"}
+          </span>
+        </span>
+        <ChevronRight className="size-5 shrink-0 text-gold-400" strokeWidth={1.75} />
+      </Link>
 
       {/* Priority queue — 俯瞰して最初に見るべきもの */}
       <section className="rounded-xl border border-border bg-card p-6 shadow-panel">

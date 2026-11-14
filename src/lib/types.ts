@@ -224,6 +224,9 @@ export interface OralExamAttempt {
   subLabel: string;
   inputMode: OralExamInputMode;
   answerText: string;
+  // 手書きのとき、AIが最初に読み取った文字。生徒・講師が answerText を直しても残す。
+  aiTranscription: string;
+  transcriptionCorrected: boolean;
   answerImageDataUrl: string;
   responseTimeMs: number;
   isCorrect: boolean;

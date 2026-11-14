@@ -347,6 +347,10 @@ db.exec(`
 `);
 ensureColumn("oral_exam_attempts", "problem_number", "problem_number INTEGER");
 ensureColumn("oral_exam_attempts", "sub_label", "sub_label TEXT NOT NULL DEFAULT ''");
+ensureColumn("oral_exam_attempts", "ai_transcription", "ai_transcription TEXT NOT NULL DEFAULT ''");
+ensureColumn("oral_exam_attempts", "transcription_corrected", "transcription_corrected INTEGER NOT NULL DEFAULT 0");
+// 回答前の習熟度(JSON)。手書きの読み取りが直されて採点が変わったとき、習熟度を計算し直すために使う。
+ensureColumn("oral_exam_attempts", "prev_mastery_json", "prev_mastery_json TEXT");
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS oral_exam_mastery (
@@ -1570,6 +1574,9 @@ interface OralExamAttemptRow {
   sub_label: string;
   input_mode: string;
   answer_text: string;
+  ai_transcription: string;
+  transcription_corrected: number;
+  prev_mastery_json: string | null;
   answer_image_data_url: string;
   response_time_ms: number;
   is_correct: number;
@@ -1596,6 +1603,8 @@ function attemptRowToRecord(row: OralExamAttemptRow): OralExamAttempt {
     subLabel: row.sub_label ?? "",
     inputMode: row.input_mode as OralExamInputMode,
     answerText: row.answer_text,
+    aiTranscription: row.ai_transcription ?? "",
+    transcriptionCorrected: row.transcription_corrected === 1,
     answerImageDataUrl: row.answer_image_data_url,
     responseTimeMs: row.response_time_ms,
     isCorrect: row.is_correct === 1,
@@ -1611,6 +1620,7 @@ function attemptRowToRecord(row: OralExamAttemptRow): OralExamAttempt {
 
 export function insertOralExamAttempt(
   input: Omit<OralExamAttempt, "id" | "createdAt" | "teacherComment">,
+  previousMastery: OralExamMastery | null = null,
 ): OralExamAttempt {
   const id = randomUUID();
   const createdAt = new Date().toISOString();
@@ -1618,8 +1628,9 @@ export function insertOralExamAttempt(
     `INSERT INTO oral_exam_attempts
        (id, session_id, student_id, question_id, book_id, book_title, category, question_prompt, problem_number, sub_label,
         input_mode, answer_text, answer_image_data_url, response_time_ms, is_correct, evaluation,
-        strengths_json, improvements_json, mastery_level, feedback_source, teacher_comment, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        strengths_json, improvements_json, mastery_level, feedback_source, teacher_comment, created_at,
+        ai_transcription, prev_mastery_json)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     id,
     input.sessionId,
@@ -1643,6 +1654,8 @@ export function insertOralExamAttempt(
     input.feedbackSource,
     "",
     createdAt,
+    input.aiTranscription,
+    JSON.stringify(previousMastery),
   );
   return { ...input, id, teacherComment: "", createdAt };
 }
@@ -2144,4 +2157,169 @@ export function markAnnouncementRead(announcementId: string, userId: string): vo
   db.prepare(
     "INSERT OR IGNORE INTO announcement_reads (announcement_id, user_id, read_at) VALUES (?, ?, ?)",
   ).run(announcementId, userId, new Date().toISOString());
+}
+
+
+// ---------------------------------------------------------------------------
+// 手書きの読み取りの訂正（AIが読み間違えた文字を、生徒・講師が直す）
+// ---------------------------------------------------------------------------
+
+// hasPreviousState: 回答前の習熟度を記録してある回答か（この機能より前の回答は false）
+export function getOralExamAttempt(id: string): { attempt: OralExamAttempt; previousMastery: OralExamMastery | null; hasPreviousState: boolean } | null {
+  const row = db.prepare("SELECT * FROM oral_exam_attempts WHERE id = ?").get(id) as
+    | OralExamAttemptRow
+    | undefined;
+  if (!row) return null;
+  return {
+    attempt: attemptRowToRecord(row),
+    previousMastery: row.prev_mastery_json ? (JSON.parse(row.prev_mastery_json) as OralExamMastery | null) : null,
+    hasPreviousState: row.prev_mastery_json !== null,
+  };
+}
+
+// 訂正した文字で採点し直した結果を保存する。AIの最初の読み取り(ai_transcription)は残す。
+export function applyAttemptCorrection(
+  id: string,
+  correction: Pick<OralExamAttempt, "answerText" | "isCorrect" | "evaluation" | "strengths" | "improvements" | "masteryLevel" | "feedbackSource">,
+): void {
+  db.prepare(
+    `UPDATE oral_exam_attempts
+     SET answer_text = ?, transcription_corrected = 1, is_correct = ?, evaluation = ?,
+         strengths_json = ?, improvements_json = ?, mastery_level = ?, feedback_source = ?
+     WHERE id = ?`,
+  ).run(
+    correction.answerText,
+    correction.isCorrect ? 1 : 0,
+    correction.evaluation,
+    JSON.stringify(correction.strengths),
+    JSON.stringify(correction.improvements),
+    correction.masteryLevel,
+    correction.feedbackSource,
+    id,
+  );
+}
+
+// 採点が変わったぶん、セッションの正解数を直す
+export function adjustSessionCorrectCount(sessionId: string, delta: number): void {
+  if (delta === 0) return;
+  db.prepare("UPDATE oral_exam_sessions SET correct_count = MAX(0, correct_count + ?) WHERE id = ?").run(delta, sessionId);
+}
+
+// この生徒の手書きについて、直近で直された読み間違い（AIの読み → 本人の訂正）。
+// 次回以降、同じ生徒の字を読むときの手がかりとしてAIに渡す。
+export function getRecentTranscriptionCorrections(
+  studentId: string,
+  limit = 8,
+): { aiRead: string; corrected: string }[] {
+  const rows = db
+    .prepare(
+      `SELECT ai_transcription, answer_text FROM oral_exam_attempts
+       WHERE student_id = ? AND transcription_corrected = 1 AND ai_transcription != '' AND ai_transcription != answer_text
+       ORDER BY created_at DESC LIMIT ?`,
+    )
+    .all(studentId, limit) as { ai_transcription: string; answer_text: string }[];
+  return rows.map((row) => ({ aiRead: row.ai_transcription.slice(0, 120), corrected: row.answer_text.slice(0, 120) }));
+}
+
+export interface HandwritingReadingStats {
+  total: number;
+  corrected: number;
+}
+
+// 手書き回答のうち、AIの読み取りが直された割合。読み取り精度の目安になる。
+export function getHandwritingReadingStats(studentId?: string): HandwritingReadingStats {
+  const row = (studentId
+    ? db
+        .prepare(
+          "SELECT COUNT(*) AS total, COALESCE(SUM(transcription_corrected), 0) AS corrected FROM oral_exam_attempts WHERE input_mode = 'handwriting' AND student_id = ?",
+        )
+        .get(studentId)
+    : db
+        .prepare(
+          "SELECT COUNT(*) AS total, COALESCE(SUM(transcription_corrected), 0) AS corrected FROM oral_exam_attempts WHERE input_mode = 'handwriting'",
+        )
+        .get()) as { total: number; corrected: number };
+  return { total: row.total, corrected: row.corrected };
+}
+
+// 講師用「今日の口頭試問」（今日＝日本時間の今日に答えられた回答の集計）
+
+export interface TodayStudentResult {
+  studentId: string;
+  total: number;
+  correct: number;
+  avgResponseTimeMs: number;
+  lastAt: string;
+  dailyTestCount: number;
+  handwritingCorrected: number;
+  bookTitles: string[];
+  // 間違えた問題（新しい順）
+  missed: { id: string; bookTitle: string; prompt: string; answerText: string }[];
+}
+
+interface TodayRow {
+  id: string;
+  student_id: string;
+  book_title: string;
+  question_prompt: string;
+  answer_text: string;
+  is_correct: number;
+  response_time_ms: number;
+  created_at: string;
+  transcription_corrected: number;
+  is_daily: number;
+}
+
+export function getTodayOralExamResults(now: Date = new Date()): TodayStudentResult[] {
+  const startUtc = new Date(`${jstDay(now)}T00:00:00+09:00`).toISOString();
+  const rows = db
+    .prepare(
+      `SELECT a.id, a.student_id, a.book_title, a.question_prompt, a.answer_text, a.is_correct,
+              a.response_time_ms, a.created_at, a.transcription_corrected,
+              CASE WHEN s.kind = 'daily' THEN 1 ELSE 0 END AS is_daily
+       FROM oral_exam_attempts a
+       LEFT JOIN oral_exam_sessions s ON s.id = a.session_id
+       WHERE a.created_at >= ?
+       ORDER BY a.created_at DESC`,
+    )
+    .all(startUtc) as unknown as TodayRow[];
+
+  const byStudent = new Map<string, TodayStudentResult & { timeSum: number }>();
+  for (const row of rows) {
+    let entry = byStudent.get(row.student_id);
+    if (!entry) {
+      entry = {
+        studentId: row.student_id,
+        total: 0,
+        correct: 0,
+        avgResponseTimeMs: 0,
+        timeSum: 0,
+        lastAt: row.created_at,
+        dailyTestCount: 0,
+        handwritingCorrected: 0,
+        bookTitles: [],
+        missed: [],
+      };
+      byStudent.set(row.student_id, entry);
+    }
+    entry.total += 1;
+    entry.timeSum += row.response_time_ms;
+    if (row.is_correct === 1) {
+      entry.correct += 1;
+    } else {
+      entry.missed.push({
+        id: row.id,
+        bookTitle: row.book_title,
+        prompt: row.question_prompt,
+        answerText: row.answer_text,
+      });
+    }
+    if (row.is_daily === 1) entry.dailyTestCount += 1;
+    entry.handwritingCorrected += row.transcription_corrected;
+    if (row.book_title && !entry.bookTitles.includes(row.book_title)) entry.bookTitles.push(row.book_title);
+  }
+
+  return [...byStudent.values()]
+    .map(({ timeSum, ...entry }) => ({ ...entry, avgResponseTimeMs: timeSum / entry.total }))
+    .sort((a, b) => b.lastAt.localeCompare(a.lastAt));
 }
