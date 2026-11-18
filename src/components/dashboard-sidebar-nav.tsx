@@ -4,6 +4,7 @@ import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
+  LineChart,
   History,
   LayoutDashboard,
   Mic,
@@ -13,10 +14,13 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+const ANALYSIS_HREF = "/dashboard/oral-exam/analysis";
+
 const NAV_ITEMS = [
   { label: "ダッシュボード", icon: LayoutDashboard, href: "/dashboard" },
   { label: "生徒一覧", icon: Users, href: "/dashboard/students" },
   { label: "口頭試問", icon: Mic, href: "/dashboard/oral-exam" },
+  { label: "データ分析", icon: LineChart, href: ANALYSIS_HREF },
   { label: "無料弱点診断", icon: Stethoscope, href: "/dashboard/prospects" },
   { label: "質問履歴", icon: History, href: "/dashboard/history" },
   { label: "弱点分析", icon: BarChart3, href: "/dashboard/analysis" },
@@ -44,7 +48,9 @@ export function DashboardSidebarNav() {
         const active =
           item.href === "/dashboard"
             ? pathname === "/dashboard"
-            : pathname.startsWith(item.href);
+            : item.href === "/dashboard/oral-exam"
+              ? pathname.startsWith(item.href) && !pathname.startsWith(ANALYSIS_HREF)
+              : pathname.startsWith(item.href);
 
         return (
           <Link

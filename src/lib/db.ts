@@ -847,6 +847,7 @@ export function deleteFamilyAccount(userId: string): void {
         "oral_exam_sessions",
         "oral_exam_mastery",
         "oral_exam_insights",
+        "oral_exam_analyses",
         "qa_history",
       ]) {
         db.prepare(`DELETE FROM ${table} WHERE student_id = ?`).run(studentId);
@@ -2322,4 +2323,167 @@ export function getTodayOralExamResults(now: Date = new Date()): TodayStudentRes
   return [...byStudent.values()]
     .map(({ timeSum, ...entry }) => ({ ...entry, avgResponseTimeMs: timeSum / entry.total }))
     .sort((a, b) => b.lastAt.localeCompare(a.lastAt));
+}
+
+
+// ---- データ分析（口頭試問20回ごとの自動分析） ----
+
+// 後から分析できるよう、回答時点の文脈（教科・問題の種類・出題元・模範解答・回答前の習熟度）も毎回残す。
+ensureColumn("oral_exam_attempts", "subject", "subject TEXT NOT NULL DEFAULT ''");
+ensureColumn("oral_exam_attempts", "question_kind", "question_kind TEXT NOT NULL DEFAULT ''");
+ensureColumn("oral_exam_attempts", "session_kind", "session_kind TEXT NOT NULL DEFAULT ''");
+ensureColumn("oral_exam_attempts", "model_answer", "model_answer TEXT NOT NULL DEFAULT ''");
+ensureColumn("oral_exam_attempts", "previous_level", "previous_level INTEGER");
+
+export function saveAttemptContext(
+  attemptId: string,
+  context: {
+    subject: string;
+    questionKind: string;
+    sessionKind: string;
+    modelAnswer: string;
+    previousLevel: number | null;
+  },
+): void {
+  db.prepare(
+    "UPDATE oral_exam_attempts SET subject = ?, question_kind = ?, session_kind = ?, model_answer = ?, previous_level = ? WHERE id = ?",
+  ).run(context.subject, context.questionKind, context.sessionKind, context.modelAnswer, context.previousLevel, attemptId);
+}
+
+// 分析に使う1回答ぶんの記録。手書き画像のような重い列は含めない。
+export interface AnalysisAttempt {
+  id: string;
+  questionId: string;
+  createdAt: string;
+  isCorrect: boolean;
+  responseTimeMs: number;
+  inputMode: OralExamInputMode;
+  bookTitle: string;
+  subject: string;
+  category: string;
+  questionKind: string;
+  sessionKind: string;
+  questionPrompt: string;
+  answerText: string;
+  improvements: string[];
+  transcriptionCorrected: boolean;
+  masteryLevel: number;
+  previousLevel: number | null;
+}
+
+export function getAnalysisAttempts(studentId: string): AnalysisAttempt[] {
+  const rows = db
+    .prepare(
+      `SELECT id, question_id, created_at, is_correct, response_time_ms, input_mode, book_title, subject, category,
+              question_kind, session_kind, question_prompt, answer_text, improvements_json, transcription_corrected,
+              mastery_level, previous_level
+       FROM oral_exam_attempts WHERE student_id = ? ORDER BY created_at ASC`,
+    )
+    .all(studentId) as Array<Record<string, unknown>>;
+  return rows.map((row) => ({
+    id: row.id as string,
+    questionId: row.question_id as string,
+    createdAt: row.created_at as string,
+    isCorrect: row.is_correct === 1,
+    responseTimeMs: row.response_time_ms as number,
+    inputMode: row.input_mode as OralExamInputMode,
+    bookTitle: row.book_title as string,
+    subject: row.subject as string,
+    category: row.category as string,
+    questionKind: row.question_kind as string,
+    sessionKind: row.session_kind as string,
+    questionPrompt: row.question_prompt as string,
+    answerText: row.answer_text as string,
+    improvements: JSON.parse((row.improvements_json as string) || "[]") as string[],
+    transcriptionCorrected: row.transcription_corrected === 1,
+    masteryLevel: row.mastery_level as number,
+    previousLevel: (row.previous_level as number | null) ?? null,
+  }));
+}
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS oral_exam_analyses (
+    id TEXT PRIMARY KEY,
+    student_id TEXT NOT NULL,
+    attempt_count INTEGER NOT NULL,
+    period_from TEXT NOT NULL,
+    period_to TEXT NOT NULL,
+    stats_json TEXT NOT NULL,
+    features_json TEXT NOT NULL,
+    analysis_json TEXT NOT NULL,
+    source TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  )
+`);
+db.exec("CREATE INDEX IF NOT EXISTS idx_oral_exam_analyses_student ON oral_exam_analyses(student_id, attempt_count)");
+
+export interface StoredOralExamAnalysis {
+  id: string;
+  studentId: string;
+  attemptCount: number;
+  periodFrom: string;
+  periodTo: string;
+  statsJson: string;
+  featuresJson: string;
+  analysisJson: string;
+  source: "claude" | "rule";
+  createdAt: string;
+}
+
+function toStoredAnalysis(row: Record<string, unknown>): StoredOralExamAnalysis {
+  return {
+    id: row.id as string,
+    studentId: row.student_id as string,
+    attemptCount: row.attempt_count as number,
+    periodFrom: row.period_from as string,
+    periodTo: row.period_to as string,
+    statsJson: row.stats_json as string,
+    featuresJson: row.features_json as string,
+    analysisJson: row.analysis_json as string,
+    source: row.source as "claude" | "rule",
+    createdAt: row.created_at as string,
+  };
+}
+
+export function getOralExamAnalyses(studentId: string): StoredOralExamAnalysis[] {
+  const rows = db
+    .prepare("SELECT * FROM oral_exam_analyses WHERE student_id = ? ORDER BY attempt_count DESC")
+    .all(studentId) as Array<Record<string, unknown>>;
+  return rows.map(toStoredAnalysis);
+}
+
+export function getLatestOralExamAnalysisMap(): Map<string, StoredOralExamAnalysis> {
+  const rows = db
+    .prepare(
+      `SELECT a.* FROM oral_exam_analyses a
+       WHERE a.attempt_count = (SELECT MAX(attempt_count) FROM oral_exam_analyses WHERE student_id = a.student_id)`,
+    )
+    .all() as Array<Record<string, unknown>>;
+  return new Map(rows.map((row) => [row.student_id as string, toStoredAnalysis(row)]));
+}
+
+export function insertOralExamAnalysis(input: Omit<StoredOralExamAnalysis, "id" | "createdAt">): void {
+  db.prepare(
+    `INSERT INTO oral_exam_analyses
+       (id, student_id, attempt_count, period_from, period_to, stats_json, features_json, analysis_json, source, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(
+    randomUUID(),
+    input.studentId,
+    input.attemptCount,
+    input.periodFrom,
+    input.periodTo,
+    input.statsJson,
+    input.featuresJson,
+    input.analysisJson,
+    input.source,
+    new Date().toISOString(),
+  );
+}
+
+export function getAttemptTotals(): Map<string, number> {
+  const rows = db
+    .prepare("SELECT student_id, COUNT(*) AS n FROM oral_exam_attempts GROUP BY student_id")
+    .all() as Array<{ student_id: string; n: number }>;
+  return new Map(rows.map((row) => [row.student_id, row.n]));
 }

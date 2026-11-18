@@ -8,10 +8,13 @@ import {
   getMastery,
   insertOralExamAttempt,
   touchOralExamSession,
+  saveAttemptContext,
   upsertMastery,
 } from "@/lib/db";
 import { gradeOralExamAnswer } from "@/lib/oral-exam-grading";
 import { computeNextMastery, masteryLevelLabel, questionKind, speedLabel } from "@/lib/oral-exam-mastery";
+import { runAnalysisIfDue } from "@/lib/oral-exam-analysis";
+import { getRoster } from "@/lib/roster";
 import { getSession } from "@/lib/session";
 import { resolveStudentIdentity } from "@/lib/student-identity";
 import type { OralExamInputMode } from "@/lib/types";
@@ -144,6 +147,19 @@ export async function POST(request: NextRequest) {
     // 読み取りが直されたときに習熟度を採点し直せるよう、更新前の状態を残しておく
     previousMastery,
   );
+
+  // 分析のために、回答時点の文脈も毎回すべて残す
+  saveAttemptContext(attempt.id, {
+    subject: book?.subject ?? "",
+    questionKind: kind,
+    sessionKind: examSession.kind,
+    modelAnswer: question.modelAnswer ?? "",
+    previousLevel: previousMastery?.level ?? null,
+  });
+
+  // 20回答たまるごとに分析を自動で作る。生徒への返答は待たせない。
+  const studentName = getRoster().find((student) => student.id === studentId)?.name ?? "生徒";
+  void runAnalysisIfDue(studentId, studentName).catch((error) => console.error("analysis failed:", error));
 
   return NextResponse.json({
     attempt,
