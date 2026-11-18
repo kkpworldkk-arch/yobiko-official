@@ -1781,6 +1781,8 @@ db.exec(`
 `);
 ensureColumn("student_feedback", "question_id", "question_id TEXT");
 ensureColumn("student_feedback", "question_label", "question_label TEXT");
+// 講師が「対応済み」にしたとき、生徒に一度だけ「対応しました」と知らせるための印
+ensureColumn("student_feedback", "notice_pending", "notice_pending INTEGER NOT NULL DEFAULT 0");
 
 export interface StudentFeedback {
   id: string;
@@ -1879,7 +1881,26 @@ export function getStudentFeedbackForStudent(studentId: string): StudentFeedback
 }
 
 export function setStudentFeedbackResolved(id: string, resolved: boolean): void {
-  db.prepare("UPDATE student_feedback SET resolved = ? WHERE id = ?").run(resolved ? 1 : 0, id);
+  const flag = resolved ? 1 : 0;
+  // 未対応→対応済みに変わったときだけ生徒への通知を立てる。未対応に戻したら取り下げる。
+  db.prepare(
+    `UPDATE student_feedback
+     SET notice_pending = CASE WHEN ? = 1 AND resolved = 0 THEN 1 WHEN ? = 0 THEN 0 ELSE notice_pending END,
+         resolved = ?
+     WHERE id = ?`,
+  ).run(flag, flag, flag, id);
+}
+
+export function getFeedbackResolvedNoticesForUser(userId: string): Array<{ id: string; message: string }> {
+  return db
+    .prepare(
+      "SELECT id, message FROM student_feedback WHERE user_id = ? AND resolved = 1 AND notice_pending = 1 ORDER BY created_at ASC",
+    )
+    .all(userId) as unknown as Array<{ id: string; message: string }>;
+}
+
+export function acknowledgeFeedbackNotice(id: string, userId: string): void {
+  db.prepare("UPDATE student_feedback SET notice_pending = 0 WHERE id = ? AND user_id = ?").run(id, userId);
 }
 
 function ensureReferenceBookCataloged(): void {
@@ -2486,4 +2507,11 @@ export function getAttemptTotals(): Map<string, number> {
     .prepare("SELECT student_id, COUNT(*) AS n FROM oral_exam_attempts GROUP BY student_id")
     .all() as Array<{ student_id: string; n: number }>;
   return new Map(rows.map((row) => [row.student_id, row.n]));
+}
+
+export function getOralExamAttemptCountSince(studentId: string, sinceIso: string): number {
+  const row = db
+    .prepare("SELECT COUNT(*) AS n FROM oral_exam_attempts WHERE student_id = ? AND created_at >= ?")
+    .get(studentId, sinceIso) as { n: number };
+  return row.n;
 }

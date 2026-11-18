@@ -1,7 +1,6 @@
 "use client";
 
-import { LogOut } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ChevronDown, LogOut } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,24 +9,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { logout } from "@/app/actions/auth";
 
-export function StudentUserMenu({
-  name,
-  initials,
-}: {
-  name: string;
-  initials: string;
-}) {
+export function StudentUserMenu({ name }: { name: string }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="flex items-center gap-2.5 rounded-full outline-none">
-        <span className="hidden text-body-sm text-ivory-200 sm:inline">
+        <span className="text-body-sm text-ivory-200">
           {name} 様
         </span>
-        <Avatar className="size-9 border border-white/[0.06] transition-colors duration-300 hover:border-gold-500/30">
-          <AvatarFallback className="bg-navy-600 text-body-sm text-gold-400">
-            {initials}
-          </AvatarFallback>
-        </Avatar>
+        <ChevronDown className="size-4 text-slate-400" strokeWidth={1.75} />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-40">
         <DropdownMenuItem

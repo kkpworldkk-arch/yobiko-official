@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
 import { AnnouncementBanner } from "@/components/announcement-banner";
+import { FeedbackResolvedBanner } from "@/components/feedback-resolved-banner";
 import { AiConsentGate } from "@/components/ai-consent-gate";
 import { NativeAppBridge } from "@/components/native-app-bridge";
 import { StudentNav } from "@/components/student-nav";
 import { StudentUserMenu } from "@/components/student-user-menu";
-import { getUnreadAnnouncementsForUser, hasUserAiConsent } from "@/lib/db";
+import { getFeedbackResolvedNoticesForUser, getUnreadAnnouncementsForUser, hasUserAiConsent } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { resolveStudentIdentity } from "@/lib/student-identity";
 
@@ -35,13 +36,14 @@ export default async function StudentLayout({
             </div>
           </div>
 
-          <StudentUserMenu name={identity.name} initials={identity.initials} />
+          <StudentUserMenu name={identity.name} />
         </div>
 
         <StudentNav />
       </header>
 
       <main className="mx-auto max-w-3xl px-6 py-10 sm:px-10">
+        <FeedbackResolvedBanner notices={getFeedbackResolvedNoticesForUser(session.userId)} />
         <AnnouncementBanner
           announcements={getUnreadAnnouncementsForUser(session.userId).map(({ id, title, body }) => ({
             id,

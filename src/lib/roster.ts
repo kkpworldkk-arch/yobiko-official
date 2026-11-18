@@ -5,6 +5,8 @@ import {
   ensureSeeded,
   getAddedStudents,
   getLatestActivityIso,
+  getOralExamAttemptCountSince,
+  getOralExamStudentSummary,
   getQaHistoryCountSince,
   getQaHistoryTotalCount,
   getSubjectBreakdown,
@@ -17,23 +19,22 @@ import type { NewStudentInput, Student } from "@/lib/types";
 const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-// 実際にDB上で質問実績がある生徒だけ、統計をライブ値で上書きする。
-// まだ質問がない（登録直後の）生徒はモック/初期値のまま表示する。
+// 名簿に出す数字(質問数・講師確認待ち・最終活動)は、すべてDBの実績から数える。
+// 質問も口頭試問の回答もまだない生徒は、0件・「記録なし」と表示する。
+// 健康状態(health)と「どう伸ばすか」(priorityAction)だけは、講師が決めた固定の値のまま。
 function withLiveStats(student: Student): Student {
-  const totalQuestions = getQaHistoryTotalCount(student.id);
-  if (totalQuestions === 0) return student;
-
   const since = new Date(Date.now() - FOURTEEN_DAYS_MS).toISOString();
-  const lastActivityIso = getLatestActivityIso(student.id);
+  const lastQuestionIso = getLatestActivityIso(student.id);
+  const lastOralIso = getOralExamStudentSummary(student.id).lastAttemptAt;
+  const lastActivityIso = [lastQuestionIso, lastOralIso].filter(Boolean).sort().pop() ?? null;
 
   return {
     ...student,
     pendingTeacherChecks: getUnresolvedTeacherCheckCount(student.id),
     questionsLast14Days: getQaHistoryCountSince(student.id, since),
-    totalQuestions,
-    lastActivity: lastActivityIso
-      ? formatRelativeTimeJa(lastActivityIso)
-      : student.lastActivity,
+    oralExamAnswersLast14Days: getOralExamAttemptCountSince(student.id, since),
+    totalQuestions: getQaHistoryTotalCount(student.id),
+    lastActivity: lastActivityIso ? formatRelativeTimeJa(lastActivityIso) : "記録なし",
     subjectBreakdown: getSubjectBreakdown(student.id),
     topStumbles: getTopStumbles(student.id),
   };
@@ -68,9 +69,8 @@ export function getRoster(): Student[] {
   const mockIds = new Set(mockStudents.map((student) => student.id));
   const added = getAddedStudents()
     .filter((student) => !mockIds.has(student.id))
-    .map(addedRecordToStudent)
-    .map(withLiveStats);
-  return [...mockStudents, ...added];
+    .map(addedRecordToStudent);
+  return [...mockStudents, ...added].map(withLiveStats);
 }
 
 export function addStudentToRoster(input: NewStudentInput): Student {
@@ -78,26 +78,13 @@ export function addStudentToRoster(input: NewStudentInput): Student {
   return addedRecordToStudent(record);
 }
 
-// ダッシュボードの「講師確認待ち」「直近14日の質問数」の合計は、キュレーション
-// 済みモック生徒の凍結値をベースに、実データを持つデモ生徒の分だけ実数へ
-// 差し替える。生徒カードの表示（凍結 or ライブ）と、集計の中身を一致させるため。
+// ダッシュボードの合計は、名簿の各生徒の実数をそのまま合算する(カード表示と必ず一致する)。
 export function getLiveTotalPendingChecks(): number {
-  const baseTotal = getRoster().reduce(
-    (sum, s) => sum + s.pendingTeacherChecks,
-    0,
-  );
-  const demoLive = getUnresolvedTeacherCheckCount(demoStudent.id);
-  return baseTotal - demoStudent.pendingTeacherChecks + demoLive;
+  return getRoster().reduce((sum, s) => sum + s.pendingTeacherChecks, 0);
 }
 
 export function getLiveTotalQuestionsLast14Days(): number {
-  const baseTotal = getRoster().reduce(
-    (sum, s) => sum + s.questionsLast14Days,
-    0,
-  );
-  const since = new Date(Date.now() - FOURTEEN_DAYS_MS).toISOString();
-  const demoLive = getQaHistoryCountSince(demoStudent.id, since);
-  return baseTotal - demoStudent.questionsLast14Days + demoLive;
+  return getRoster().reduce((sum, s) => sum + s.questionsLast14Days, 0);
 }
 
 // 教科別・つまずき傾向の集計は、以前は固定の集計値定数を独自に持っていたため

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
+  acknowledgeFeedbackNotice,
   deleteFamilyAccount,
   getUserById,
   insertStudentFeedback,
@@ -130,4 +131,11 @@ export async function deleteAccount(
   deleteFamilyAccount(user.id);
   await deleteSession();
   redirect("/login?deleted=1");
+}
+
+export async function acknowledgeFeedbackResolved(id: string): Promise<void> {
+  const session = await getSession();
+  if (!session) throw new Error("ログインが必要です。");
+  acknowledgeFeedbackNotice(id, session.userId);
+  revalidatePath("/student", "layout");
 }

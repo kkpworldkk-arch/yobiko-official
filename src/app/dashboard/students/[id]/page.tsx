@@ -44,9 +44,6 @@ export default async function StudentDetailPage({
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <div className="flex size-12 items-center justify-center rounded-full border border-white/[0.06] bg-navy-600 text-body font-medium text-gold-400">
-              {student.initials}
-            </div>
             <div>
               <h1 className="text-h1 text-ivory-100">{student.name}</h1>
               <p className="mt-1 text-body-sm text-slate-400">

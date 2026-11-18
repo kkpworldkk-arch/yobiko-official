@@ -25,6 +25,7 @@ export interface Student {
   health: StudentHealth;
   pendingTeacherChecks: number;
   questionsLast14Days: number;
+  oralExamAnswersLast14Days?: number;
   totalQuestions: number;
   lastActivity: string;
   subjectBreakdown: SubjectBreakdown[];

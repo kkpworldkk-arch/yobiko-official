@@ -1,6 +1,5 @@
 import { Clock3, GraduationCap, MessageCircleQuestion } from "lucide-react";
 import Link from "next/link";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { StatusBadge } from "@/components/status-badge";
 import { cn } from "@/lib/utils";
 import type { Student } from "@/lib/types";
@@ -20,11 +19,6 @@ export function StudentCard({ student }: { student: Student }) {
     >
       <header className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <Avatar className="size-11 border border-white/[0.06]">
-            <AvatarFallback className="bg-navy-600 text-body-sm font-medium text-gold-400">
-              {student.initials}
-            </AvatarFallback>
-          </Avatar>
           <div>
             <h3 className="text-h3 text-ivory-100">{student.name}</h3>
             <div className="mt-0.5 flex items-center gap-1.5 text-caption text-slate-400">
@@ -53,9 +47,15 @@ export function StudentCard({ student }: { student: Student }) {
       <footer className="flex items-center justify-between gap-3 text-caption text-slate-400">
         <div className="flex items-center gap-4">
           <span className="tabular-nums">
-            直近14日
+            直近14日 質問
             <span className="ml-1.5 font-medium text-ivory-200">
               {student.questionsLast14Days}件
+            </span>
+          </span>
+          <span className="tabular-nums">
+            口頭試問
+            <span className="ml-1.5 font-medium text-ivory-200">
+              {student.oralExamAnswersLast14Days ?? 0}問
             </span>
           </span>
           <span className="flex items-center gap-1 tabular-nums">

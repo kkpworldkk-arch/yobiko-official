@@ -2,7 +2,6 @@ import { BrainCircuit, KeyRound, MessageSquareText, Trash2, UserCircle } from "l
 import { Button } from "@/components/ui/button";
 import { DeleteAccountForm } from "@/components/delete-account-form";
 import { StudyReminderSettings } from "@/components/study-reminder-settings";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { StudentFeedbackForm } from "@/components/student-feedback-form";
 import { StudentPasswordForm } from "@/components/student-password-form";
 import { PasskeyButton } from "@/components/passkey-button";
@@ -35,11 +34,6 @@ export default async function StudentSettingsPage() {
           プロフィール
         </h2>
         <div className="mt-4 flex items-center gap-3">
-          <Avatar className="size-12 border border-white/[0.06]">
-            <AvatarFallback className="bg-navy-600 text-body font-medium text-gold-400">
-              {identity.initials}
-            </AvatarFallback>
-          </Avatar>
           <div>
             <p className="text-body font-medium text-ivory-100">{identity.name}</p>
             <p className="text-body-sm text-slate-400">{identity.grade}</p>
