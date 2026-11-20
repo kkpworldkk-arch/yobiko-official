@@ -1892,11 +1892,13 @@ export function setStudentFeedbackResolved(id: string, resolved: boolean): void 
 }
 
 export function getFeedbackResolvedNoticesForUser(userId: string): Array<{ id: string; message: string }> {
-  return db
+  const rows = db
     .prepare(
       "SELECT id, message FROM student_feedback WHERE user_id = ? AND resolved = 1 AND notice_pending = 1 ORDER BY created_at ASC",
     )
     .all(userId) as unknown as Array<{ id: string; message: string }>;
+  // node:sqlite の行は prototype が null のため、そのままではクライアントコンポーネントに渡せない
+  return rows.map((row) => ({ id: row.id, message: row.message }));
 }
 
 export function acknowledgeFeedbackNotice(id: string, userId: string): void {
