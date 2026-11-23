@@ -2538,3 +2538,29 @@ export function getOralExamAttemptCountSince(studentId: string, sinceIso: string
     .get(studentId, sinceIso) as { n: number };
   return row.n;
 }
+
+// 1日1回、DBの一貫したコピーを DATA_DIR/backups に残し、新しい7日分だけ保つ。
+// VACUUM INTO は動いているDBを止めずに読み取りだけで書き出すので、小さなDBでは軽い。
+// 同じディスク内のコピーなので、誤操作やデータ破損への備え（ディスク自体の故障には効かない）。
+const BACKUP_KEEP = 7;
+const BACKUP_MIN_INTERVAL_MS = 20 * 60 * 60 * 1000;
+
+export function backupDatabaseIfDue(): string | null {
+  const dir = path.join(DATA_DIR, "backups");
+  fs.mkdirSync(dir, { recursive: true });
+  const files = fs
+    .readdirSync(dir)
+    .filter((name) => /^app-\d{8}-\d{6}\.db$/.test(name))
+    .sort();
+  const latest = files[files.length - 1];
+  if (latest && Date.now() - fs.statSync(path.join(dir, latest)).mtimeMs < BACKUP_MIN_INTERVAL_MS) {
+    return null;
+  }
+  const stamp = new Date().toISOString().replace(/[-:]/g, "").replace("T", "-").slice(0, 15);
+  const target = path.join(dir, `app-${stamp}.db`);
+  db.exec(`VACUUM INTO '${target.replace(/'/g, "''")}'`);
+  for (const old of [...files, path.basename(target)].slice(0, -BACKUP_KEEP)) {
+    fs.rmSync(path.join(dir, old), { force: true });
+  }
+  return target;
+}
