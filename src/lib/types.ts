@@ -147,6 +147,8 @@ export interface OralExamBook {
 export interface OralExamFilterOptions {
   pages: number[];
   chapters: string[];
+  // 種類（科目）の一覧。参考書の掲載順。
+  types: string[];
   chapterTypes: Record<string, Record<string, number[]>>;
   questionCount: number;
   problemNumbers: number[];

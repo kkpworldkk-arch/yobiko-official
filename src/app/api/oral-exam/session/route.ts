@@ -193,6 +193,13 @@ function normalizeFilters(input: OralExamQuestionFilters | undefined): OralExamQ
           .filter(Boolean)
           .slice(0, 500)
       : undefined,
+    problemTypes: Array.isArray(input?.problemTypes)
+      ? input.problemTypes
+          .filter((type): type is string => typeof type === "string")
+          .map((type) => type.trim().slice(0, 100))
+          .filter(Boolean)
+          .slice(0, 50)
+      : undefined,
     problemType: typeof input?.problemType === "string" ? input.problemType.trim().slice(0, 100) || undefined : undefined,
   };
   if (filters.pageStart && filters.pageEnd && filters.pageStart > filters.pageEnd) {

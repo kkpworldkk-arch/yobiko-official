@@ -33,7 +33,7 @@ function parseTemplate(text) {
     for (const key of ["C", ...(hasType ? ["TYPE"] : []), "N", "P", "AP", "T", "Q", "A"]) if (!f.get(key)?.value.trim()) throw new Error(`${f.get("N")?.line ?? entries[0].line}行目付近: ${key} がありません。`);
     const n = integer(f.get("N").value.trim(), f.get("N").line, "N"); if (n < 1) throw new Error(`${f.get("N").line}行目: N は1以上です。`); if (chemistryMode && n > 230) throw new Error(`${f.get("N").line}行目: 化学230選のNは230以下です。`);
     const t = f.get("T").value.trim(); if (!["recall", "solve"].includes(t)) throw new Error(`${f.get("T").line}行目: T は recall または solve です。`);
-    const type = f.get("TYPE")?.value.trim() ?? ""; if (hasType && !["プロセス", "基本例題", "基本問題", "標準例題", "標準問題", "演習問題", "必修基礎問", "実戦基礎問"].includes(type)) throw new Error(`${f.get("TYPE").line}行目: TYPE が不正です。`);
+    const type = f.get("TYPE")?.value.trim() ?? ""; if (hasType && !["プロセス", "基本例題", "基本問題", "標準例題", "標準問題", "演習問題", "必修基礎問", "実戦基礎問", "赤文字"].includes(type)) throw new Error(`${f.get("TYPE").line}行目: TYPE が不正です。`);
     const chapter = f.get("C").value.trim(); const sub = f.get("S")?.value.trim() ?? ""; const key = `${chapter}|${type}|${n}|${sub}`;
     if (seen.has(key)) throw new Error(`${f.get("N").line}行目: C/TYPE/N/S が重複しています (${key})。`); seen.add(key);
     const numericAnswer = f.get("U")?.value.trim() ?? ""; if (chemistryMode && t === "solve" && /[0-9０-９]/.test(f.get("Q").value) && !numericAnswer) throw new Error(`${f.get("T").line}行目: 計算問題の solve には U が必要です。`);

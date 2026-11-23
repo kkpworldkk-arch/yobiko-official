@@ -1178,6 +1178,7 @@ export function getOralExamFilterOptions(bookId: string): OralExamFilterOptions 
   const pages = new Set<number>();
   // 章は五十音順ではなく参考書の掲載順（最初に出てくる問題の順）で並べる。範囲指定の「〜」が本の順序と一致するように。
   const chapters = new Set<string>();
+  const types = new Set<string>();
   const problemNumbers = new Set<number>();
   const chapterTypes: Record<string, Record<string, number[]>> = {};
   const typeNumbers: Record<string, number[]> = {};
@@ -1192,6 +1193,7 @@ export function getOralExamFilterOptions(bookId: string): OralExamFilterOptions 
     if (question.category.trim()) chapters.add(question.category.trim());
     const chapter = question.category.trim();
     const type = question.problemType.trim();
+    if (type) types.add(type);
     if (chapter && type && question.problemNumber !== null) {
       chapterTypes[chapter] ??= {};
       chapterTypes[chapter][type] ??= [];
@@ -1209,6 +1211,7 @@ export function getOralExamFilterOptions(bookId: string): OralExamFilterOptions 
   return {
     pages: [...pages].sort((a, b) => a - b),
     chapters: [...chapters],
+    types: [...types],
     chapterTypes: Object.fromEntries(Object.entries(chapterTypes).map(([chapter, types]) => [chapter, Object.fromEntries(Object.entries(types).map(([type, numbers]) => [type, numbers.sort((a, b) => a - b)]))])),
     typeNumbers: Object.fromEntries(Object.entries(typeNumbers).map(([type, numbers]) => [type, numbers.sort((a, b) => a - b)])),
     typesNeedChapter,
@@ -1458,6 +1461,8 @@ export interface OralExamQuestionFilters {
   // 出題対象の章・カテゴリ名（完全一致）。範囲指定は画面側で章リストを切り出して渡す。
   chapters?: string[];
   problemType?: string;
+  // 出題対象の種類（科目）名（完全一致）。範囲指定は画面側で種類リストを切り出して渡す。
+  problemTypes?: string[];
 }
 
 function pageFromQuestion(item: OralExamQueueItem): number | null {
@@ -1474,6 +1479,7 @@ function matchesOralExamFilters(item: OralExamQueueItem, filters: OralExamQuesti
     return false;
   }
   if (filters.problemType && filters.problemType !== item.question.problemType) return false;
+  if (filters.problemTypes && filters.problemTypes.length > 0 && !filters.problemTypes.includes(item.question.problemType)) return false;
   if (filters.pageStart || filters.pageEnd) {
     const page = pageFromQuestion(item);
     if (page === null) return false;
