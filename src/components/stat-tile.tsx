@@ -28,7 +28,7 @@ export function StatTile({
       )}
     >
       <div className="flex items-center justify-between">
-        <span className="text-eyebrow uppercase tracking-[0.16em] text-slate-400">
+        <span className="text-eyebrow tracking-[0.04em] text-slate-400">
           {label}
         </span>
         <Icon

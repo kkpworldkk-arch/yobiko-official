@@ -37,9 +37,6 @@ export default async function DashboardLayout({
         <img src="/logo-vertical.png" alt="" width={36} height={36} className="size-9 rounded-[22%]" />
         <div>
           <p className="text-h3 leading-none text-ivory-100">滝原塾</p>
-          <p className="mt-1 text-eyebrow uppercase tracking-[0.16em] text-slate-500">
-            Concierge
-          </p>
         </div>
       </div>
 
@@ -47,7 +44,7 @@ export default async function DashboardLayout({
 
       {totalPendingChecks > 0 && (
         <div className="mb-4 rounded-lg border border-crimson-500/20 bg-crimson-500/[0.06] px-3.5 py-3">
-          <p className="text-eyebrow uppercase tracking-[0.16em] text-crimson-500">
+          <p className="text-eyebrow tracking-[0.04em] text-crimson-500">
             講師確認待ち
           </p>
           <p className="mt-1 text-h2 font-semibold tabular-nums text-ivory-100">

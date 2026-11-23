@@ -133,7 +133,7 @@ export default async function StudentAnalysisPage({ params }: { params: Promise<
 
       {latest && narrative && (
         <section className="rounded-xl border border-gold-400/30 bg-card p-5 shadow-panel">
-          <h2 className="text-caption font-medium uppercase tracking-[0.1em] text-gold-400/80">
+          <h2 className="text-caption font-medium tracking-[0.04em] text-gold-400/80">
             分析(第{analyses.length}回・{latest.periodFrom}〜{latest.periodTo}・{latest.attemptCount}回答時点
             {latest.source === "rule" ? "・AIなしの簡易版" : ""})
           </h2>

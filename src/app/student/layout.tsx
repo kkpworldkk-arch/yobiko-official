@@ -30,9 +30,6 @@ export default async function StudentLayout({
             <img src="/logo-vertical.png" alt="" width={36} height={36} className="size-9 rounded-[22%]" />
             <div>
               <p className="text-h3 leading-none text-ivory-100">滝原塾</p>
-              <p className="mt-1 text-eyebrow uppercase tracking-[0.16em] text-slate-500">
-                Concierge
-              </p>
             </div>
           </div>
 

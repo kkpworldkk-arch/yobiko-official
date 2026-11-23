@@ -171,7 +171,7 @@ export default function NewProspectPage() {
         className="flex flex-col gap-6 rounded-xl border border-border bg-card p-6 shadow-panel"
       >
         <div>
-          <p className="mb-2.5 text-eyebrow uppercase tracking-[0.16em] text-slate-500">
+          <p className="mb-2.5 text-eyebrow tracking-[0.04em] text-slate-500">
             生徒情報
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -214,7 +214,7 @@ export default function NewProspectPage() {
         <Separator />
 
         <div>
-          <p className="mb-2.5 text-eyebrow uppercase tracking-[0.16em] text-slate-500">
+          <p className="mb-2.5 text-eyebrow tracking-[0.04em] text-slate-500">
             模試情報
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -242,7 +242,7 @@ export default function NewProspectPage() {
         <Separator />
 
         <div>
-          <p className="mb-1 text-eyebrow uppercase tracking-[0.16em] text-slate-500">
+          <p className="mb-1 text-eyebrow tracking-[0.04em] text-slate-500">
             教科別得点
           </p>
           <p className="mb-3 text-caption text-slate-500">
@@ -292,7 +292,7 @@ export default function NewProspectPage() {
         <Separator />
 
         <div>
-          <p className="mb-1 text-eyebrow uppercase tracking-[0.16em] text-slate-500">
+          <p className="mb-1 text-eyebrow tracking-[0.04em] text-slate-500">
             分野別正答率（任意）
           </p>
           <p className="mb-3 text-caption text-slate-500">
@@ -362,7 +362,7 @@ export default function NewProspectPage() {
         <Separator />
 
         <div>
-          <p className="mb-2.5 text-eyebrow uppercase tracking-[0.16em] text-slate-500">
+          <p className="mb-2.5 text-eyebrow tracking-[0.04em] text-slate-500">
             講師からの所見（任意）
           </p>
           <Textarea

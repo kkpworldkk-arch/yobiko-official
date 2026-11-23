@@ -24,7 +24,7 @@ export function AnnouncementBanner({
         >
           <div className="flex items-center gap-2.5">
             <Megaphone className="size-4 text-gold-400" strokeWidth={1.75} />
-            <p className="text-caption font-medium tracking-[0.1em] text-gold-400">
+            <p className="text-caption font-medium tracking-[0.04em] text-gold-400">
               事務所からのお知らせ
             </p>
           </div>

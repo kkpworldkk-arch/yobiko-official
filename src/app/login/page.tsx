@@ -62,7 +62,7 @@ export default function LoginPage() {
             className="size-[72px] rounded-[22%] shadow-panel"
           />
           <div>
-            <p className="text-eyebrow uppercase tracking-[0.24em] text-gold-400/90">
+            <p className="text-eyebrow tracking-[0.04em] text-gold-400/90">
               滝原塾専用アプリ
             </p>
             <h1 className="mt-2.5 text-h1 text-ivory-100">
@@ -192,7 +192,7 @@ export default function LoginPage() {
         <p className="mt-8 text-center text-caption leading-relaxed text-slate-500">
           本プラットフォームは会員制医学部受験サービスの一部として提供されます。
           <br />
-          お困りの際は専属コンシェルジュまでご連絡ください。
+          お困りの際は滝原塾までご連絡ください。
         </p>
         <div className="mt-4 flex gap-4 text-caption text-slate-500">
           <Link href="/privacy" className="transition-colors hover:text-gold-400">

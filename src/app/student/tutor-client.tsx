@@ -261,8 +261,8 @@ export function StudentTutorClient({
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-3 text-center sm:flex-row sm:items-start sm:justify-between sm:text-left">
         <div>
-          <p className="text-eyebrow uppercase tracking-[0.24em] text-gold-400/90">
-            AI Concierge Tutor
+          <p className="text-eyebrow tracking-[0.04em] text-gold-400/90">
+            AIチューター
           </p>
           <h1 className="mt-2.5 text-h1 text-ivory-100">
             ようこそ、{studentName}様
@@ -309,7 +309,7 @@ export function StudentTutorClient({
 
         <form onSubmit={handleAsk} className="mt-5 flex flex-col gap-5">
           <div>
-            <p className="mb-2.5 text-eyebrow uppercase tracking-[0.16em] text-slate-500">
+            <p className="mb-2.5 text-eyebrow tracking-[0.04em] text-slate-500">
               分類
             </p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -382,7 +382,7 @@ export function StudentTutorClient({
           <Separator />
 
           <div>
-            <p className="mb-2.5 text-eyebrow uppercase tracking-[0.16em] text-slate-500">
+            <p className="mb-2.5 text-eyebrow tracking-[0.04em] text-slate-500">
               質問
             </p>
             <Textarea
@@ -437,7 +437,7 @@ export function StudentTutorClient({
           <Separator />
 
           <div>
-            <p className="mb-2.5 text-eyebrow uppercase tracking-[0.16em] text-slate-500">
+            <p className="mb-2.5 text-eyebrow tracking-[0.04em] text-slate-500">
               生徒の状況
             </p>
             <Textarea
@@ -605,7 +605,7 @@ export function StudentTutorClient({
             </ol>
 
             <div className="rounded-lg border border-white/[0.05] bg-navy-800/60 p-3.5">
-              <p className="text-eyebrow uppercase tracking-[0.16em] text-gold-400/80">
+              <p className="text-eyebrow tracking-[0.04em] text-gold-400/80">
                 弱点タグ
               </p>
               <p className="mt-1.5 text-body-sm font-medium text-ivory-100">
@@ -718,7 +718,7 @@ export function StudentTutorClient({
               className="flex flex-col gap-1.5 py-4 first:pt-5 last:pb-5"
             >
               <div className="flex items-center justify-between gap-3">
-                <span className="text-caption font-medium uppercase tracking-[0.1em] text-gold-400/80">
+                <span className="text-caption font-medium tracking-[0.04em] text-gold-400/80">
                   {entry.subject}
                   {entry.unit && entry.unit !== entry.subject
                     ? ` ・ ${entry.unit}`

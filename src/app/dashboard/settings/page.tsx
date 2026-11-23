@@ -193,7 +193,7 @@ export default async function SettingsPage() {
           {feedback.map((item) => (
             <div key={item.id} className="flex flex-col gap-1.5 py-4 first:pt-0 last:pb-0">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-caption font-medium uppercase tracking-[0.1em] text-gold-400/80">
+                <span className="text-caption font-medium tracking-[0.04em] text-gold-400/80">
                   {item.studentName}
                 </span>
                 <div className="flex items-center gap-2">

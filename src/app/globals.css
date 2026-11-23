@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /* =====================================================================
- * 滝原塾 コンシェルジュ・プラットフォーム — Design System
+ * 滝原塾 — Design System
  * ---------------------------------------------------------------------
  * Philosophy: Minimalist Luxury. 装飾ではなく、余白・質感・階調で
  * 「信頼」と「知性」を伝える。原色は使わず、Deep Navy × Slate ×
@@ -51,12 +51,11 @@
   --color-crimson-500: #b25454;
 
   /* --- Typography ----------------------------------------------------
-   * Inter（欧文・数字）+ Noto Sans JP（和文）の混植。
-   * Inter が持たないグリフ（漢字・かな）は自動的に Noto Sans JP へ
-   * フォールバックするため、和欧混在でも字面の高さが揃う。
+   * 端末標準のフォント（iPhone・Mac はヒラギノ角ゴ、Windows は游ゴシック等）。
+   * 外部フォントは読み込まない。
    * ------------------------------------------------------------------ */
-  --font-sans: var(--font-inter), var(--font-noto-jp), "Hiragino Sans",
-    "Yu Gothic", sans-serif;
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Hiragino Sans",
+    "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Yu Gothic", Meiryo, sans-serif;
 
   /* Type scale — 用途ごとに固定。任意サイズの乱用を避ける */
   --text-display: 2.75rem; /* ログイン画面の主見出し等、1画面1回まで */
@@ -90,7 +89,7 @@
   --text-caption--line-height: 1.5;
   --text-caption--font-weight: 500;
 
-  --text-eyebrow: 0.6875rem; /* 大文字ラベル。uppercase と併用 */
+  --text-eyebrow: 0.6875rem; /* 小さなラベル */
   --text-eyebrow--line-height: 1;
   --text-eyebrow--font-weight: 600;
   --text-eyebrow--letter-spacing: 0.16em;
@@ -112,7 +111,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-mono: var(--font-geist-mono);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Courier New", monospace;
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -158,10 +157,6 @@
  * ライト/ダーク設定には依存させない（高級ブランドは配色を選ばせない）。
  * ------------------------------------------------------------------- */
 :root {
-  /* layout.tsx で読み込む @fontsource-variable の書体名 */
-  --font-inter: "Inter Variable";
-  --font-noto-jp: "Noto Sans JP Variable";
-  --font-geist-mono: "Geist Mono Variable";
   --background: var(--color-navy-900);
   --foreground: var(--color-ivory-100);
   --card: var(--color-navy-700);
@@ -234,7 +229,7 @@
  *  - パネル/カードは常に shadow-panel + border + bg-card を基本とする
  *  - ゴールドは「主要CTA」「アクティブなタブ/ナビ」「重要指標の数値」の
  *    3用途にのみ使う。バッジや罫線での多用は禁止
- *  - ラベルは text-eyebrow + uppercase + tracking-[0.16em] を必ず併用する
+ *  - ラベルは text-eyebrow + tracking-[0.04em] を必ず併用する
  *  - 生徒の状態色は sage(順調) / rust(要観察) / crimson(要対応) の
  *    3段階に固定し、それ以外の色を状態表現に使わない
  *  - transition は duration-300〜500 + ease-luxury を既定とする

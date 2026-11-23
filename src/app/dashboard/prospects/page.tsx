@@ -77,7 +77,7 @@ export default function ProspectsPage() {
 
             {a.report.priorityFocus.length > 0 && (
               <div className="rounded-lg border border-white/[0.05] bg-navy-800/60 p-3">
-                <p className="text-eyebrow uppercase tracking-[0.16em] text-gold-400/80">
+                <p className="text-eyebrow tracking-[0.04em] text-gold-400/80">
                   優先対策分野
                 </p>
                 <p className="mt-1.5 text-body-sm text-ivory-100">

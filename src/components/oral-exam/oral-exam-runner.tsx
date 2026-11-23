@@ -677,8 +677,8 @@ export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
   return (
     <div className="flex flex-col gap-8">
       <section>
-        <p className="text-eyebrow uppercase tracking-[0.24em] text-gold-400/90">
-          {mode === "daily" ? "Daily Test" : "AI Oral Examination"}
+        <p className="text-eyebrow tracking-[0.04em] text-gold-400/90">
+          {mode === "daily" ? "毎日の復習" : "音声で答える口頭試問"}
         </p>
         <h1 className="mt-2.5 text-h1 text-ivory-100">{mode === "daily" ? "デイリーテスト" : "AI口頭試問"}</h1>
         <p className="mt-2 text-body-sm text-slate-400">
@@ -1240,7 +1240,7 @@ export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
 
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="rounded-lg border border-white/[0.05] bg-navy-800/60 p-3.5">
-                      <p className="text-eyebrow uppercase tracking-[0.16em] text-gold-400/80">
+                      <p className="text-eyebrow tracking-[0.04em] text-gold-400/80">
                         良かった点
                       </p>
                       <ul className="mt-2 flex flex-col gap-1.5">
@@ -1252,7 +1252,7 @@ export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
                       </ul>
                     </div>
                     <div className="rounded-lg border border-white/[0.05] bg-navy-800/60 p-3.5">
-                      <p className="text-eyebrow uppercase tracking-[0.16em] text-gold-400/80">
+                      <p className="text-eyebrow tracking-[0.04em] text-gold-400/80">
                         改善点
                       </p>
                       <ul className="mt-2 flex flex-col gap-1.5">
@@ -1329,7 +1329,7 @@ export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
                     className="flex w-full flex-col gap-1 text-left"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-caption font-medium uppercase tracking-[0.1em] text-gold-400/80">
+                      <span className="text-caption font-medium tracking-[0.04em] text-gold-400/80">
                         {entry.bookTitle}
                         {entry.problemNumber !== null ? ` ・ 問題 ${entry.problemNumber}${entry.subLabel ? ` ${entry.subLabel}` : ""}` : ""}
                         {entry.category ? ` ・ ${entry.category}` : ""}
@@ -1394,7 +1394,7 @@ export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                           {entry.strengths.length > 0 && (
                             <div>
-                              <p className="text-eyebrow uppercase tracking-[0.16em] text-gold-400/80">
+                              <p className="text-eyebrow tracking-[0.04em] text-gold-400/80">
                                 良かった点
                               </p>
                               <ul className="mt-1.5 flex flex-col gap-1">
@@ -1408,7 +1408,7 @@ export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
                           )}
                           {entry.improvements.length > 0 && (
                             <div>
-                              <p className="text-eyebrow uppercase tracking-[0.16em] text-gold-400/80">
+                              <p className="text-eyebrow tracking-[0.04em] text-gold-400/80">
                                 改善点
                               </p>
                               <ul className="mt-1.5 flex flex-col gap-1">

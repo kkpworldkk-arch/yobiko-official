@@ -101,7 +101,7 @@ export default async function OralExamStudentProgressPage({
 
       {insight && (
         <section className="rounded-xl border border-gold-400/30 bg-card p-5 shadow-panel">
-          <h2 className="text-caption font-medium uppercase tracking-[0.1em] text-gold-400/80">
+          <h2 className="text-caption font-medium tracking-[0.04em] text-gold-400/80">
             AIによる要約・アドバイス
           </h2>
           <p className="mt-2 whitespace-pre-line text-body-sm leading-relaxed text-ivory-200">
@@ -200,7 +200,7 @@ export default async function OralExamStudentProgressPage({
           {attempts.map((attempt) => (
             <div key={attempt.id} className="flex flex-col gap-1.5 py-4 first:pt-0 last:pb-0">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-caption font-medium uppercase tracking-[0.1em] text-gold-400/80">
+                <span className="text-caption font-medium tracking-[0.04em] text-gold-400/80">
                   {attempt.bookTitle}
                   {attempt.category ? ` ・ ${attempt.category}` : ""}
                 </span>
@@ -258,7 +258,7 @@ export default async function OralExamStudentProgressPage({
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {attempt.strengths.length > 0 && (
                     <div className="rounded-lg border border-white/[0.05] bg-navy-800/60 p-3">
-                      <p className="text-eyebrow uppercase tracking-[0.16em] text-gold-400/80">
+                      <p className="text-eyebrow tracking-[0.04em] text-gold-400/80">
                         良かった点
                       </p>
                       <ul className="mt-1.5 flex flex-col gap-1">
@@ -272,7 +272,7 @@ export default async function OralExamStudentProgressPage({
                   )}
                   {attempt.improvements.length > 0 && (
                     <div className="rounded-lg border border-white/[0.05] bg-navy-800/60 p-3">
-                      <p className="text-eyebrow uppercase tracking-[0.16em] text-gold-400/80">
+                      <p className="text-eyebrow tracking-[0.04em] text-gold-400/80">
                         改善点
                       </p>
                       <ul className="mt-1.5 flex flex-col gap-1">

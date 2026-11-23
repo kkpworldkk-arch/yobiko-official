@@ -457,7 +457,7 @@ export default function OralExamBookDetailPage({
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     {q.category && (
-                      <span className="text-caption font-medium uppercase tracking-[0.1em] text-gold-400/80">
+                      <span className="text-caption font-medium tracking-[0.04em] text-gold-400/80">
                         {q.category}
                       </span>
                     )}

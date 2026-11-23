@@ -63,7 +63,7 @@ export default async function StudentDetailPage({
       </section>
 
       <section className="rounded-xl border border-gold-500/20 bg-card p-6 shadow-panel">
-        <p className="text-eyebrow uppercase tracking-[0.16em] text-gold-400/80">優先アクション</p>
+        <p className="text-eyebrow tracking-[0.04em] text-gold-400/80">優先アクション</p>
         <h2 className="mt-1 text-h3 text-ivory-100">{student.priorityAction.headline}</h2>
         <p className="mt-1 text-body-sm leading-relaxed text-slate-300">{student.priorityAction.detail}</p>
       </section>

@@ -107,7 +107,7 @@ export default function ProspectReportPage({
       <section className="rounded-xl border border-gold-500/20 bg-card p-6 shadow-panel-lg sm:p-8">
         <div className="flex items-center gap-2">
           <Stethoscope className="size-4 text-gold-400" strokeWidth={1.75} />
-          <p className="text-eyebrow uppercase tracking-[0.24em] text-gold-400/90">
+          <p className="text-eyebrow tracking-[0.04em] text-gold-400/90">
             無料弱点診断レポート
           </p>
         </div>
@@ -165,7 +165,7 @@ export default function ProspectReportPage({
 
         {assessment.report.priorityFocus.length > 0 && (
           <div className="mt-6 rounded-lg border border-white/[0.05] bg-navy-800/60 p-4">
-            <p className="text-eyebrow uppercase tracking-[0.16em] text-gold-400/80">
+            <p className="text-eyebrow tracking-[0.04em] text-gold-400/80">
               優先対策分野
             </p>
             <ul className="mt-2.5 flex flex-col gap-1.5">

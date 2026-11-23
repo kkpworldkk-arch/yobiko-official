@@ -33,7 +33,7 @@ export function StudentCard({ student }: { student: Student }) {
       </header>
 
       <div className="rounded-lg border border-white/[0.05] bg-navy-800/60 p-3.5">
-        <p className="text-eyebrow uppercase tracking-[0.16em] text-gold-400/80">
+        <p className="text-eyebrow tracking-[0.04em] text-gold-400/80">
           この生徒をどう伸ばすか
         </p>
         <p className="mt-1.5 text-body-sm font-medium text-ivory-100">

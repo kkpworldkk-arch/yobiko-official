@@ -20,7 +20,7 @@ export function FeedbackResolvedBanner({ notices }: { notices: { id: string; mes
         >
           <div className="flex items-center gap-2.5">
             <CheckCircle2 className="size-4 text-sage-500" strokeWidth={1.75} />
-            <p className="text-caption font-medium tracking-[0.1em] text-sage-500">ご要望に対応しました</p>
+            <p className="text-caption font-medium tracking-[0.04em] text-sage-500">ご要望に対応しました</p>
           </div>
           <p className="mt-3 text-body-sm leading-relaxed text-slate-300">
             いただいたご要望について、対応を行いました。ご意見をありがとうございました。
