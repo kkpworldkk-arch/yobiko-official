@@ -60,7 +60,7 @@ export function DashboardTopbar({
         {mobileNav}
         <div>
           <h1 className="text-h2 text-ivory-100 sm:text-h1">
-            おかえりなさい、{teacherName}先生
+            講師用
           </h1>
           <p className="mt-1 text-caption text-slate-400">{formattedDate}</p>
         </div>
