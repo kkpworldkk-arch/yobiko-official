@@ -5,6 +5,7 @@ import { decodeSession } from "@/lib/session";
 const ROLE_HOME: Record<string, string> = {
   teacher: "/dashboard",
   family: "/student",
+  admin: "/admin",
 };
 
 export function proxy(request: NextRequest) {
@@ -13,9 +14,10 @@ export function proxy(request: NextRequest) {
 
   const isDashboardRoute = pathname.startsWith("/dashboard");
   const isStudentRoute = pathname.startsWith("/student");
+  const isAdminRoute = pathname.startsWith("/admin");
   const isLoginRoute = pathname === "/login";
 
-  if ((isDashboardRoute || isStudentRoute) && !session) {
+  if ((isDashboardRoute || isStudentRoute || isAdminRoute) && !session) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
@@ -27,6 +29,10 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL(ROLE_HOME[session.role], request.url));
   }
 
+  if (session && isAdminRoute && session.role !== "admin") {
+    return NextResponse.redirect(new URL(ROLE_HOME[session.role], request.url));
+  }
+
   if (session && isLoginRoute) {
     return NextResponse.redirect(new URL(ROLE_HOME[session.role], request.url));
   }
@@ -35,5 +41,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/student/:path*", "/login"],
+  matcher: ["/dashboard/:path*", "/student/:path*", "/admin/:path*", "/login"],
 };

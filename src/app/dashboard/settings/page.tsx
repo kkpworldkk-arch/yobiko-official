@@ -16,7 +16,7 @@ export default async function SettingsPage() {
   const session = await getSession();
   const teacherName = session?.name ?? "講師";
   const feedback = getAllStudentFeedback();
-  const announcements = getAllAnnouncements();
+  const announcements = getAllAnnouncements(["student"]);
   const books = getOralExamBooks();
 
   return (
@@ -31,7 +31,7 @@ export default async function SettingsPage() {
       <section className="rounded-xl border border-border bg-card p-6 shadow-panel">
         <h2 className="text-h3 text-ivory-100">プロフィール</h2>
         <div className="mt-4 flex items-center gap-3">
-          <Avatar className="size-12 border border-white/[0.06]">
+          <Avatar className="size-12 border border-border">
             <AvatarFallback className="bg-navy-600 text-body font-medium text-gold-400">
               {teacherName.slice(0, 1)}
             </AvatarFallback>
@@ -51,7 +51,7 @@ export default async function SettingsPage() {
               <KeyRound className="size-4 text-slate-400" strokeWidth={1.75} />
               <div>
                 <p className="text-body-sm font-medium text-ivory-100">
-                  AIチューター（Claude API）
+                  質問・解説（外部サービス連携）
                 </p>
                 <p className="text-caption text-slate-500">
                   {hasApiKey
@@ -95,7 +95,7 @@ export default async function SettingsPage() {
         {!hasApiKey && (
           <p className="mt-4 text-caption leading-relaxed text-slate-500">
             .env.local に ANTHROPIC_API_KEY を設定し、開発サーバーを再起動すると、
-            テンプレート応答から実際のAI回答に自動的に切り替わります。
+            試用の応答から実際の回答に自動的に切り替わります。
           </p>
         )}
       </section>
@@ -150,7 +150,7 @@ export default async function SettingsPage() {
           <div>
             <Button
               type="submit"
-              className="h-10 bg-gold-500 px-5 text-body-sm font-medium text-navy-950 hover:bg-gold-400"
+              className="h-10 bg-gold-500 px-5 text-body-sm font-medium text-white hover:bg-gold-400"
             >
               お知らせを出す
             </Button>

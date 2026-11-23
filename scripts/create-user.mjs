@@ -90,8 +90,8 @@ const { email, password, role, name } = args;
 if (!email || !password || !role || !name) {
   usageAndExit();
 }
-if (role !== "teacher" && role !== "family") {
-  usageAndExit("role は teacher または family のいずれかを指定してください。");
+if (role !== "teacher" && role !== "family" && role !== "admin") {
+  usageAndExit("role は teacher・family・admin のいずれかを指定してください。");
 }
 if (password.length < 8) {
   usageAndExit("password は8文字以上にしてください。");
@@ -155,7 +155,7 @@ if (linkedStudentId) {
   db.prepare("UPDATE students SET user_id = ? WHERE id = ?").run(userId, linkedStudentId);
 }
 
-console.log(`作成しました: ${name} <${normalizedEmail}> (${role === "teacher" ? "講師" : "生徒・保護者"})`);
+console.log(`作成しました: ${name} <${normalizedEmail}> (${role === "teacher" ? "講師" : role === "admin" ? "管理者" : "生徒・保護者"})`);
 if (linkedStudentId) {
   console.log(`生徒台帳「${args["student-name"] ?? linkedStudentId}」に紐付けました。`);
 }

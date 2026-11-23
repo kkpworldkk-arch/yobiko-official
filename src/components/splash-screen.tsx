@@ -60,7 +60,7 @@ export function SplashScreen() {
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(60% 50% at 50% 40%, rgba(196,160,92,0.10) 0%, rgba(196,160,92,0) 60%), radial-gradient(80% 60% at 50% 100%, rgba(38,50,87,0.4) 0%, rgba(5,7,13,0) 60%)",
+            "radial-gradient(60% 50% at 50% 40%, rgba(32,96,160,0.10) 0%, rgba(32,96,160,0) 60%), radial-gradient(80% 60% at 50% 100%, rgba(32,96,160,0.08) 0%, rgba(255,255,255,0) 60%)",
         }}
       />
       {/* eslint-disable-next-line @next/next/no-img-element */}

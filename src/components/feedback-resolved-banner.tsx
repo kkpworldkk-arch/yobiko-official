@@ -25,14 +25,14 @@ export function FeedbackResolvedBanner({ notices }: { notices: { id: string; mes
           <p className="mt-3 text-body-sm leading-relaxed text-slate-300">
             いただいたご要望について、対応を行いました。ご意見をありがとうございました。
           </p>
-          <p className="mt-2 line-clamp-3 whitespace-pre-line rounded-lg border border-white/[0.05] bg-navy-800/60 p-3 text-caption text-slate-400">
+          <p className="mt-2 line-clamp-3 whitespace-pre-line rounded-lg border border-border bg-navy-800/60 p-3 text-caption text-slate-400">
             {notice.message}
           </p>
           <Button
             type="button"
             disabled={isPending}
             onClick={() => startTransition(() => acknowledgeFeedbackResolved(notice.id))}
-            className="mt-4 h-10 bg-gold-500 px-5 text-body-sm font-medium text-navy-950 hover:bg-gold-400 disabled:opacity-70"
+            className="mt-4 h-10 bg-gold-500 px-5 text-body-sm font-medium text-white hover:bg-gold-400 disabled:opacity-70"
           >
             {isPending ? <Loader2 className="size-4 animate-spin" /> : "確認しました"}
           </Button>

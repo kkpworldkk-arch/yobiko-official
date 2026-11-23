@@ -2,13 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  ClipboardCheck,
-  Printer,
-  Sparkles,
-  Stethoscope,
-} from "lucide-react";
+import { ArrowLeft, ClipboardCheck, ClipboardList, Printer, Stethoscope } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MagnitudeBarList } from "@/components/magnitude-bar-list";
 import { formatRelativeTimeJa } from "@/lib/format";
@@ -16,7 +10,7 @@ import type { ProspectAssessment } from "@/lib/types";
 
 const SUPPORT_POINTS = [
   {
-    title: "AIチューターによる24時間対応",
+    title: "質問・解説への24時間対応",
     detail: "問題でつまずいた瞬間に質問でき、その場で解法の道筋を示します。",
   },
   {
@@ -148,7 +142,7 @@ export default function ProspectReportPage({
 
       <section className="rounded-xl border border-border bg-card p-6 shadow-panel sm:p-8">
         <div className="mb-4 flex items-center gap-2">
-          <Sparkles className="size-4 text-gold-400" strokeWidth={1.75} />
+          <ClipboardList className="size-4 text-gold-400" strokeWidth={1.75} />
           <h2 className="text-h2 text-ivory-100">診断コメント</h2>
         </div>
         <div className="flex flex-col gap-4">
@@ -164,7 +158,7 @@ export default function ProspectReportPage({
         </div>
 
         {assessment.report.priorityFocus.length > 0 && (
-          <div className="mt-6 rounded-lg border border-white/[0.05] bg-navy-800/60 p-4">
+          <div className="mt-6 rounded-lg border border-border bg-navy-800/60 p-4">
             <p className="text-eyebrow tracking-[0.04em] text-gold-400/80">
               優先対策分野
             </p>
@@ -189,7 +183,7 @@ export default function ProspectReportPage({
           {SUPPORT_POINTS.map((point) => (
             <div
               key={point.title}
-              className="rounded-lg border border-white/[0.05] bg-navy-800/60 p-4"
+              className="rounded-lg border border-border bg-navy-800/60 p-4"
             >
               <p className="text-body-sm font-medium text-ivory-100">
                 {point.title}

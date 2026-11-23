@@ -32,7 +32,7 @@ export function StudentCard({ student }: { student: Student }) {
         <StatusBadge health={student.health} />
       </header>
 
-      <div className="rounded-lg border border-white/[0.05] bg-navy-800/60 p-3.5">
+      <div className="rounded-lg border border-border bg-navy-800/60 p-3.5">
         <p className="text-eyebrow tracking-[0.04em] text-gold-400/80">
           この生徒をどう伸ばすか
         </p>

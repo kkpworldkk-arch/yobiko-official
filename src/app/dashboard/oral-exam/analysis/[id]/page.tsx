@@ -51,7 +51,7 @@ function StatsBlock({ stats }: { stats: AnalysisStats }) {
           ["平均反応時間", sec(stats.avgResponseTimeMs)],
           ["正解でも遅い問題", `${stats.slowCorrectCount}問`],
         ].map(([label, value]) => (
-          <div key={label} className="rounded-lg border border-white/[0.06] bg-navy-800/60 p-3">
+          <div key={label} className="rounded-lg border border-border bg-navy-800/60 p-3">
             <p className="text-caption text-slate-500">{label}</p>
             <p className="mt-0.5 text-h3 tabular-nums text-ivory-100">{value}</p>
           </div>
@@ -135,7 +135,7 @@ export default async function StudentAnalysisPage({ params }: { params: Promise<
         <section className="rounded-xl border border-gold-400/30 bg-card p-5 shadow-panel">
           <h2 className="text-caption font-medium tracking-[0.04em] text-gold-400/80">
             分析(第{analyses.length}回・{latest.periodFrom}〜{latest.periodTo}・{latest.attemptCount}回答時点
-            {latest.source === "rule" ? "・AIなしの簡易版" : ""})
+            {latest.source === "rule" ? "・簡易版" : ""})
           </h2>
           <p className="mt-2 whitespace-pre-line text-body-sm leading-relaxed text-ivory-200">{narrative.summary}</p>
           <div className="mt-4 grid gap-4 lg:grid-cols-3">
@@ -176,7 +176,7 @@ export default async function StudentAnalysisPage({ params }: { params: Promise<
               const past = JSON.parse(analysis.analysisJson) as AnalysisNarrative;
               const stats = JSON.parse(analysis.statsJson) as AnalysisStats;
               return (
-                <details key={analysis.id} className="rounded-lg border border-white/[0.06] bg-navy-800/60 p-3">
+                <details key={analysis.id} className="rounded-lg border border-border bg-navy-800/60 p-3">
                   <summary className="cursor-pointer text-body-sm text-ivory-200">
                     第{analyses.length - 1 - index}回 {analysis.periodFrom}〜{analysis.periodTo}(正答率{pct(stats.accuracy)})
                   </summary>

@@ -37,7 +37,7 @@ export function AiConsentGate({
           このアプリのAI口頭試問・AIチューターでは、採点やアドバイスを作成するために、
           あなたの入力内容を外部のAIサービスに送信します。ご利用の前に内容をご確認ください。
         </p>
-        <dl className="flex flex-col gap-3 rounded-lg border border-white/[0.06] bg-navy-800/60 p-4">
+        <dl className="flex flex-col gap-3 rounded-lg border border-border bg-navy-800/60 p-4">
           <div>
             <dt className="text-caption text-gold-400/90">送信先</dt>
             <dd className="mt-0.5">Anthropic, PBC（米国）が提供するAI「Claude」</dd>
@@ -73,7 +73,7 @@ export function AiConsentGate({
           type="button"
           disabled={isPending}
           onClick={() => startTransition(() => acceptAiConsent())}
-          className="h-11 bg-gold-500 px-6 text-body-sm font-medium text-navy-950 shadow-gold-glow hover:bg-gold-400 disabled:opacity-70"
+          className="h-11 bg-gold-500 px-6 text-body-sm font-medium text-white shadow-gold-glow hover:bg-gold-400 disabled:opacity-70"
         >
           {isPending ? <Loader2 className="size-4 animate-spin" /> : "同意してAI機能を使う"}
         </Button>

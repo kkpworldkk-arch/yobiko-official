@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { getAllStudentFeedback } from "@/lib/db";
+import { AnnouncementBanner } from "@/components/announcement-banner";
+import { getAllStudentFeedback, getUnreadAnnouncementsForUser } from "@/lib/db";
 import { getLiveTotalPendingChecks, getPendingCheckStudents } from "@/lib/roster";
 import { getSession } from "@/lib/session";
 import { DashboardTopbar } from "@/components/dashboard-topbar";
@@ -57,7 +58,7 @@ export default async function DashboardLayout({
       )}
 
       <div className="flex items-center gap-3 border-t border-sidebar-border pt-4">
-        <Avatar className="size-9 border border-white/[0.06]">
+        <Avatar className="size-9 border border-border">
           <AvatarFallback className="bg-navy-600 text-body-sm text-gold-400">
             {session.name.slice(0, 1)}
           </AvatarFallback>
@@ -85,7 +86,13 @@ export default async function DashboardLayout({
           teacherName={session.name}
           mobileNav={<DashboardMobileNav>{sidebarBody}</DashboardMobileNav>}
         />
-        <main className="flex-1 px-4 py-6 sm:px-8 sm:py-8">{children}</main>
+        <main className="flex-1 px-4 py-6 sm:px-8 sm:py-8">
+          <AnnouncementBanner
+            announcements={getUnreadAnnouncementsForUser(session.userId, session.role).map(({ id, title, body }) => ({ id, title, body }))}
+            from="運営からのお知らせ"
+          />
+          {children}
+        </main>
       </div>
     </div>
   );

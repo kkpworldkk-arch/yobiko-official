@@ -1,22 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  ArrowRight,
-  CheckCircle2,
-  ChevronDown,
-  Keyboard,
-  ListChecks,
-  Loader2,
-  Mic,
-  MicOff,
-  PenLine,
-  RotateCcw,
-  Sparkles,
-  TriangleAlert,
-  Volume2,
-  XCircle,
-} from "lucide-react";
+import { ArrowRight, BookOpen, CheckCircle2, ChevronDown, Keyboard, ListChecks, Loader2, Mic, MicOff, PenLine, Play, RotateCcw, Send, Shuffle, TriangleAlert, Volume2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -626,14 +611,14 @@ export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
         }),
       });
 
-      if (!res.ok) throw new Error("AI採点への問い合わせに失敗しました。");
+      if (!res.ok) throw new Error("採点の取得に失敗しました。");
 
       const data: AttemptResult = await res.json();
       setResult(data);
       setSessionLog((prev) => [...prev, data]);
       setStage("feedback");
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "AI採点の取得に失敗しました。時間をおいて再度お試しください。");
+      setErrorMessage(error instanceof Error ? error.message : "採点の取得に失敗しました。時間をおいて再度お試しください。");
     } finally {
       setIsSubmitting(false);
     }
@@ -680,7 +665,7 @@ export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
         <p className="text-eyebrow tracking-[0.04em] text-gold-400/90">
           {mode === "daily" ? "毎日の復習" : "音声で答える口頭試問"}
         </p>
-        <h1 className="mt-2.5 text-h1 text-ivory-100">{mode === "daily" ? "デイリーテスト" : "AI口頭試問"}</h1>
+        <h1 className="mt-2.5 text-h1 text-ivory-100">{mode === "daily" ? "デイリーテスト" : "口頭試問"}</h1>
         <p className="mt-2 text-body-sm text-slate-400">
           {mode === "daily"
             ? "前日にやった口頭試問の復習です。間違えた問題と時間がかかった問題を優先して出題します。答え方は口頭試問と同じで、音声・手書き・キーボードのいずれかで回答してください。"
@@ -695,11 +680,11 @@ export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
       )}
 
       {stage === "no-books" && (
-        <section className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-white/10 bg-card py-16 text-center">
-          <Sparkles className="size-6 text-slate-500" strokeWidth={1.5} />
+        <section className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border bg-card py-16 text-center">
+          <BookOpen className="size-6 text-slate-500" strokeWidth={1.5} />
           <p className="text-body-sm text-slate-400">
             {mode === "daily"
-              ? "復習できる口頭試問の記録がまだありません。先にAI口頭試問に取り組むと、翌日からデイリーテストに挑戦できます。"
+              ? "復習できる口頭試問の記録がまだありません。先に口頭試問に取り組むと、翌日からデイリーテストに挑戦できます。"
               : "まだ参考書が割り当てられていません。担当講師が教材を準備するまでお待ちください。"}
           </p>
         </section>
@@ -716,16 +701,16 @@ export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
               <Button
                 type="button"
                 onClick={() => startDailySession("random")}
-                className="mt-4 h-11 w-full gap-1.5 bg-gold-500 px-5 text-body-sm font-medium text-navy-950 shadow-gold-glow hover:bg-gold-400 sm:w-auto"
+                className="mt-4 h-11 w-full gap-1.5 bg-gold-500 px-5 text-body-sm font-medium text-white shadow-gold-glow hover:bg-gold-400 sm:w-auto"
               >
-                <Sparkles className="size-4" />
+                <Shuffle className="size-4" />
                 おまかせで始める（最大{DAILY_MAX_QUESTIONS}問）
               </Button>
               <p className="mt-2 text-caption text-slate-500">
                 間違えた問題 → 時間がかかった問題 → 正解した問題の順に集め、出す順番はランダムです。
               </p>
 
-              <div className="mt-6 border-t border-white/[0.06] pt-5">
+              <div className="mt-6 border-t border-border pt-5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="flex items-center gap-1.5 text-caption text-slate-400">
                     <ListChecks className="size-4" strokeWidth={1.75} />
@@ -753,12 +738,12 @@ export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
                           disabled={disabled}
                           onClick={() => toggleDailySelected(candidate.id)}
                           className={`flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors disabled:opacity-40 ${
-                            checked ? "border-gold-500/50 bg-gold-500/[0.08]" : "border-white/[0.06] bg-navy-800/60"
+                            checked ? "border-gold-500/50 bg-gold-500/[0.08]" : "border-border bg-navy-800/60"
                           }`}
                         >
                           <span
                             className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded border ${
-                              checked ? "border-gold-400 bg-gold-500 text-navy-950" : "border-slate-500"
+                              checked ? "border-gold-400 bg-gold-500 text-white" : "border-slate-500"
                             }`}
                           >
                             {checked && <CheckCircle2 className="size-3.5" strokeWidth={2.5} />}
@@ -831,15 +816,15 @@ export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
               <Button
                 type="button"
                 onClick={startSession}
-                className="h-10 gap-1.5 bg-gold-500 px-5 text-body-sm font-medium text-navy-950 shadow-gold-glow hover:bg-gold-400"
+                className="h-10 gap-1.5 bg-gold-500 px-5 text-body-sm font-medium text-white shadow-gold-glow hover:bg-gold-400"
               >
-                <Sparkles className="size-4" />
+                <Play className="size-4" />
                 {stage === "idle" ? "口頭試問を始める" : "もう一度取り組む"}
               </Button>
             )}
           </div>
 
-          <div className="mt-5 border-t border-white/[0.06] pt-5">
+          <div className="mt-5 border-t border-border pt-5">
             <p className="text-caption text-slate-400">出題範囲</p>
             <div className="mt-2 flex flex-col gap-4">
               {/* 章・種類（科目）・ページ・問題番号は、それぞれ「開始〜終了」で範囲を指定でき、指定したものすべてに当てはまる問題を出す */}
@@ -927,7 +912,7 @@ export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
                 </span>
               </div>
 
-              <div className="mt-3 rounded-lg border border-white/[0.05] bg-navy-800/60 p-4">
+              <div className="mt-3 rounded-lg border border-border bg-navy-800/60 p-4">
                 {/* 章名が長くても枠からはみ出さないよう、バッジは省略表示にしてボタンは折り返す */}
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline" className="min-w-0 max-w-full shrink" title={currentQuestion.category || "総合"}>
@@ -1140,16 +1125,16 @@ export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
                     type="button"
                     disabled={!canSubmit || isSubmitting}
                     onClick={handleSubmit}
-                    className="mt-5 h-11 w-full bg-gold-500 text-body font-medium text-navy-950 shadow-gold-glow transition-all duration-400 ease-luxury hover:bg-gold-400 disabled:opacity-60 sm:w-auto sm:px-6"
+                    className="mt-5 h-11 w-full bg-gold-500 text-body font-medium text-white shadow-gold-glow transition-all duration-400 ease-luxury hover:bg-gold-400 disabled:opacity-60 sm:w-auto sm:px-6"
                   >
                     {isSubmitting ? (
                       <>
                         <Loader2 className="size-4 animate-spin" />
-                        AIが採点しています…
+                        採点しています…
                       </>
                     ) : (
                       <>
-                        <Sparkles className="size-4" />
+                        <Send className="size-4" />
                         回答する
                       </>
                     )}
@@ -1181,12 +1166,12 @@ export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
                   </div>
 
                   {result.attempt.inputMode === "handwriting" && (
-                    <div className="rounded-lg border border-white/[0.05] bg-navy-800/60 px-3.5 py-2.5 text-body-sm text-slate-300">
+                    <div className="rounded-lg border border-border bg-navy-800/60 px-3.5 py-2.5 text-body-sm text-slate-300">
                       {!correctionOpen ? (
                         <>
                           <p>
                             <span className="text-slate-500">
-                              {result.attempt.transcriptionCorrected ? "あなたが直した文字: " : "AIの読み取り: "}
+                              {result.attempt.transcriptionCorrected ? "あなたが直した文字: " : "読み取り結果: "}
                             </span>
                             {result.attempt.answerText || "（読み取れませんでした）"}
                           </p>
@@ -1204,7 +1189,7 @@ export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
                       ) : (
                         <div className="flex flex-col gap-2">
                           <p className="text-caption text-slate-400">
-                            自分が書いた内容に直してください。直した内容で採点し直し、次回からAIがあなたの字を読むときの参考にします。
+                            自分が書いた内容に直してください。直した内容で採点し直し、次回からあなたの字を読み取るときの参考にします。
                           </p>
                           <Textarea
                             value={correctionText}
@@ -1239,7 +1224,7 @@ export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
                   </p>
 
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="rounded-lg border border-white/[0.05] bg-navy-800/60 p-3.5">
+                    <div className="rounded-lg border border-border bg-navy-800/60 p-3.5">
                       <p className="text-eyebrow tracking-[0.04em] text-gold-400/80">
                         良かった点
                       </p>
@@ -1251,7 +1236,7 @@ export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
                         ))}
                       </ul>
                     </div>
-                    <div className="rounded-lg border border-white/[0.05] bg-navy-800/60 p-3.5">
+                    <div className="rounded-lg border border-border bg-navy-800/60 p-3.5">
                       <p className="text-eyebrow tracking-[0.04em] text-gold-400/80">
                         改善点
                       </p>
@@ -1274,7 +1259,7 @@ export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
                   <Button
                     type="button"
                     onClick={goToNext}
-                    className="h-11 w-full gap-1.5 bg-gold-500 text-body font-medium text-navy-950 shadow-gold-glow hover:bg-gold-400 sm:w-auto sm:px-6"
+                    className="h-11 w-full gap-1.5 bg-gold-500 text-body font-medium text-white shadow-gold-glow hover:bg-gold-400 sm:w-auto sm:px-6"
                   >
                     {currentIndex + 1 >= queue.length ? "結果を見る" : "次の問題へ"}
                     <ArrowRight className="size-4" />
@@ -1371,7 +1356,7 @@ export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
                   </button>
 
                   {isExpanded && (
-                    <div className="mt-3 flex flex-col gap-3 rounded-lg border border-white/[0.05] bg-navy-800/60 p-3.5">
+                    <div className="mt-3 flex flex-col gap-3 rounded-lg border border-border bg-navy-800/60 p-3.5">
                       {entry.answerText && (
                         <p className="text-body-sm text-slate-300">
                           あなたの回答: {entry.answerText}
@@ -1382,7 +1367,7 @@ export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
                         <img
                           src={entry.answerImageDataUrl}
                           alt="手書き回答"
-                          className="h-28 w-auto rounded-lg border border-white/10 bg-ivory-100"
+                          className="h-28 w-auto rounded-lg border border-border bg-ivory-100"
                         />
                       )}
                       {entry.evaluation && (

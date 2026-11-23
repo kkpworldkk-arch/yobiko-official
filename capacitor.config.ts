@@ -7,18 +7,18 @@ const config: CapacitorConfig = {
   appId: "jp.takiharajuku.app",
   appName: "滝原塾",
   webDir: "mobile/www",
-  backgroundColor: "#05070d",
+  backgroundColor: "#ffffff",
   server: {
     url: "https://takihara-app.onrender.com",
     errorPath: "offline.html",
   },
   ios: {
     contentInset: "automatic",
-    backgroundColor: "#05070d",
+    backgroundColor: "#ffffff",
   },
   plugins: {
     LocalNotifications: {
-      iconColor: "#c4a05c",
+      iconColor: "#2060a0",
     },
   },
 };

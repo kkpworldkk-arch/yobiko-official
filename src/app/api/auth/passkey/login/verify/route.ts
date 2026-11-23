@@ -10,7 +10,7 @@ import {
   getWebAuthnRpId,
 } from "@/lib/webauthn";
 
-const ROLE_HOME = { teacher: "/dashboard", family: "/student" } as const;
+const ROLE_HOME = { teacher: "/dashboard", family: "/student", admin: "/admin" } as const;
 
 export const dynamic = "force-dynamic";
 

@@ -8,8 +8,10 @@ import { acknowledgeAnnouncement } from "@/app/actions/student-settings";
 // 事務所からのお知らせ。「確認しました」を押すと記録され、その生徒には二度と出ない。
 export function AnnouncementBanner({
   announcements,
+  from = "事務所からのお知らせ",
 }: {
   announcements: { id: string; title: string; body: string }[];
+  from?: string;
 }) {
   const [isPending, startTransition] = useTransition();
 
@@ -25,7 +27,7 @@ export function AnnouncementBanner({
           <div className="flex items-center gap-2.5">
             <Megaphone className="size-4 text-gold-400" strokeWidth={1.75} />
             <p className="text-caption font-medium tracking-[0.04em] text-gold-400">
-              事務所からのお知らせ
+              {from}
             </p>
           </div>
           <h2 className="mt-3 text-h3 text-ivory-100">{item.title}</h2>
@@ -36,7 +38,7 @@ export function AnnouncementBanner({
             type="button"
             disabled={isPending}
             onClick={() => startTransition(() => acknowledgeAnnouncement(item.id))}
-            className="mt-4 h-10 bg-gold-500 px-5 text-body-sm font-medium text-navy-950 hover:bg-gold-400 disabled:opacity-70"
+            className="mt-4 h-10 bg-gold-500 px-5 text-body-sm font-medium text-white hover:bg-gold-400 disabled:opacity-70"
           >
             {isPending ? <Loader2 className="size-4 animate-spin" /> : "確認しました"}
           </Button>

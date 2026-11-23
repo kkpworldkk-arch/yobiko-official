@@ -94,7 +94,7 @@ export function CreateBookDialog() {
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="bg-gold-500 text-navy-950 hover:bg-gold-400"
+              className="bg-gold-500 text-white hover:bg-gold-400"
             >
               {isSubmitting ? "作成しています…" : "作成する"}
             </Button>

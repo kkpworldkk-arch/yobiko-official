@@ -1,21 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
-import {
-  BarChart3,
-  Clock3,
-  Download,
-  FileText,
-  ListChecks,
-  Loader2,
-  MessagesSquare,
-  Paperclip,
-  Search,
-  Send,
-  Sparkles,
-  TriangleAlert,
-  X,
-} from "lucide-react";
+import { BarChart3, BookOpen, Clock3, Download, FileText, ListChecks, Loader2, MessagesSquare, Paperclip, Search, Send, TriangleAlert, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -199,7 +185,7 @@ export function StudentTutorClient({
       });
 
       if (!res.ok) {
-        throw new Error("AIチューターへの問い合わせに失敗しました。");
+        throw new Error("質問・解説の取得に失敗しました。");
       }
 
       const data: { entry: QaHistoryEntry; source: "claude" | "demo" } =
@@ -221,7 +207,7 @@ export function StudentTutorClient({
       setAttachments([]);
     } catch {
       setErrorMessage(
-        "AIチューターへの問い合わせに失敗しました。時間をおいて再度お試しください。",
+        "質問・解説の取得に失敗しました。時間をおいて再度お試しください。",
       );
     } finally {
       setIsThinking(false);
@@ -262,7 +248,7 @@ export function StudentTutorClient({
       <section className="flex flex-col gap-3 text-center sm:flex-row sm:items-start sm:justify-between sm:text-left">
         <div>
           <p className="text-eyebrow tracking-[0.04em] text-gold-400/90">
-            AIチューター
+            質問・解説
           </p>
           <h1 className="mt-2.5 text-h1 text-ivory-100">
             ようこそ、{studentName}様
@@ -302,9 +288,9 @@ export function StudentTutorClient({
       </section>
 
       <section className="rounded-xl border border-border bg-card p-6 shadow-panel">
-        <h2 className="text-h2 text-ivory-100">AIに質問する</h2>
+        <h2 className="text-h2 text-ivory-100">質問する</h2>
         <p className="mt-1 text-body-sm text-slate-400">
-          問題文や分からない箇所を入力すると、AIがすぐに解説します。
+          問題文や分からない箇所を入力すると、その場で解説します。
         </p>
 
         <form onSubmit={handleAsk} className="mt-5 flex flex-col gap-5">
@@ -412,7 +398,7 @@ export function StudentTutorClient({
               {attachments.map((file) => (
                 <span
                   key={file.name}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-navy-800/60 py-1 pl-2.5 pr-1.5 text-caption text-slate-300"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-navy-800/60 py-1 pl-2.5 pr-1.5 text-caption text-slate-300"
                 >
                   <FileText className="size-3.5 text-slate-400" strokeWidth={1.75} />
                   {file.name}
@@ -485,7 +471,7 @@ export function StudentTutorClient({
                 <Input
                   value={weaknessHint}
                   onChange={(e) => setWeaknessHint(e.target.value)}
-                  placeholder="弱点タグの候補（任意・AIの参考情報になります）"
+                  placeholder="弱点タグの候補（任意・解説の参考になります）"
                   className="h-10"
                 />
                 <Button
@@ -532,7 +518,7 @@ export function StudentTutorClient({
           <Button
             type="submit"
             disabled={!question.trim() || isThinking}
-            className="h-11 w-full bg-gold-500 text-body font-medium text-navy-950 shadow-gold-glow transition-all duration-400 ease-luxury hover:bg-gold-400 disabled:opacity-60 sm:w-auto sm:self-end sm:px-6"
+            className="h-11 w-full bg-gold-500 text-body font-medium text-white shadow-gold-glow transition-all duration-400 ease-luxury hover:bg-gold-400 disabled:opacity-60 sm:w-auto sm:self-end sm:px-6"
           >
             {isThinking ? (
               <>
@@ -542,7 +528,7 @@ export function StudentTutorClient({
             ) : (
               <>
                 <Send className="size-4" />
-                AIに質問する
+                質問する
               </>
             )}
           </Button>
@@ -552,8 +538,8 @@ export function StudentTutorClient({
       <section className="rounded-xl border border-border bg-card p-6 shadow-panel">
         <div className="mb-4 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Sparkles className="size-4 text-gold-400" strokeWidth={1.75} />
-            <h2 className="text-h2 text-ivory-100">AIからの解説</h2>
+            <BookOpen className="size-4 text-gold-400" strokeWidth={1.75} />
+            <h2 className="text-h2 text-ivory-100">解説</h2>
           </div>
           {response && responseSource === "demo" && (
             <span className="text-caption text-slate-500">
@@ -570,10 +556,10 @@ export function StudentTutorClient({
         )}
 
         {!response && !isThinking && !errorMessage && (
-          <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-white/10 py-10 text-center">
+          <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-border py-10 text-center">
             <MessagesSquare className="size-6 text-slate-500" strokeWidth={1.5} />
             <p className="text-body-sm text-slate-400">
-              質問を送ると、ここにAIの解説が表示されます。
+              質問を送ると、ここに解説が表示されます。
             </p>
           </div>
         )}
@@ -604,7 +590,7 @@ export function StudentTutorClient({
               ))}
             </ol>
 
-            <div className="rounded-lg border border-white/[0.05] bg-navy-800/60 p-3.5">
+            <div className="rounded-lg border border-border bg-navy-800/60 p-3.5">
               <p className="text-eyebrow tracking-[0.04em] text-gold-400/80">
                 弱点タグ
               </p>
@@ -629,7 +615,7 @@ export function StudentTutorClient({
             {weeklyPlan.map((bucket) => (
               <div
                 key={bucket.label}
-                className="rounded-lg border border-white/[0.05] bg-navy-800/60 p-3.5"
+                className="rounded-lg border border-border bg-navy-800/60 p-3.5"
               >
                 <p className="text-body-sm font-medium text-ivory-100">
                   {bucket.label}

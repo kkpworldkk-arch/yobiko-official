@@ -89,7 +89,7 @@ export default async function StudentDetailPage({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="text-h3 text-ivory-100">質問履歴</h2>
-            <p className="mt-1 text-body-sm text-slate-400">生徒から届いた質問とAI回答を確認できます。</p>
+            <p className="mt-1 text-body-sm text-slate-400">生徒から届いた質問と回答を確認できます。</p>
           </div>
           <Link href={`/dashboard/history?studentId=${encodeURIComponent(id)}`} className="text-body-sm text-gold-400 hover:text-gold-300">すべて見る</Link>
         </div>

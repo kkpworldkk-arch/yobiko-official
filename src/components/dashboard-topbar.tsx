@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react";
 import Form from "next/form";
 import Link from "next/link";
-import { Bell, LogOut, MessageSquareText, Search, Settings, Sparkles } from "lucide-react";
+import { Bell, ClipboardCheck, LogOut, MessageSquareText, Search, Settings } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -110,7 +110,7 @@ export function DashboardTopbar({
                     key={student.id}
                     render={<Link href={`/dashboard/students/${encodeURIComponent(student.id)}`} />}
                   >
-                    <Sparkles className="size-4 text-crimson-500" strokeWidth={1.75} />
+                    <ClipboardCheck className="size-4 text-crimson-500" strokeWidth={1.75} />
                     <span className="flex-1 truncate">{student.name}</span>
                     <span className="tabular-nums text-slate-400">{student.count}件</span>
                   </DropdownMenuItem>
@@ -150,7 +150,7 @@ export function DashboardTopbar({
 
         <DropdownMenu>
           <DropdownMenuTrigger className="flex items-center gap-2 rounded-full outline-none">
-            <Avatar className="size-10 border border-white/[0.06] transition-colors duration-300 hover:border-gold-500/30">
+            <Avatar className="size-10 border border-border transition-colors duration-300 hover:border-gold-500/30">
               <AvatarFallback className="bg-navy-600 text-body-sm text-gold-400">
                 {teacherName.slice(0, 1)}
               </AvatarFallback>

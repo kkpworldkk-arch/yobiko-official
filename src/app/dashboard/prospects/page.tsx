@@ -31,7 +31,7 @@ export default function ProspectsPage() {
         <Button
           render={<Link href="/dashboard/prospects/new" />}
           nativeButton={false}
-          className="h-9 gap-1.5 bg-gold-500 px-3 text-navy-950 hover:bg-gold-400"
+          className="h-9 gap-1.5 bg-gold-500 px-3 text-white hover:bg-gold-400"
         >
           <Plus className="size-4" strokeWidth={2} />
           新しい診断を作成
@@ -45,7 +45,7 @@ export default function ProspectsPage() {
       )}
 
       {!isLoading && assessments.length === 0 && (
-        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-white/10 bg-card py-16 text-center">
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-card py-16 text-center">
           <Stethoscope className="size-6 text-slate-500" strokeWidth={1.5} />
           <p className="text-body-sm text-slate-400">
             まだ診断がありません。模試結果を入力して、最初の診断レポートを作成しましょう。
@@ -76,7 +76,7 @@ export default function ProspectsPage() {
             </p>
 
             {a.report.priorityFocus.length > 0 && (
-              <div className="rounded-lg border border-white/[0.05] bg-navy-800/60 p-3">
+              <div className="rounded-lg border border-border bg-navy-800/60 p-3">
                 <p className="text-eyebrow tracking-[0.04em] text-gold-400/80">
                   優先対策分野
                 </p>

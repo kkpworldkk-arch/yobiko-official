@@ -104,6 +104,7 @@ export async function acknowledgeAnnouncement(announcementId: string): Promise<v
   if (!session) redirect("/login");
   markAnnouncementRead(announcementId, session.userId);
   revalidatePath("/student", "layout");
+  revalidatePath("/dashboard", "layout");
 }
 
 export interface DeleteAccountState {

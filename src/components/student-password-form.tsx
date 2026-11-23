@@ -82,7 +82,7 @@ export function StudentPasswordForm() {
       <Button
         type="submit"
         disabled={isSubmitting}
-        className="mt-1 h-11 w-fit bg-gold-500 px-5 text-body-sm font-medium text-navy-950 shadow-gold-glow transition-all duration-400 ease-luxury hover:bg-gold-400 disabled:opacity-70"
+        className="mt-1 h-11 w-fit bg-gold-500 px-5 text-body-sm font-medium text-white shadow-gold-glow transition-all duration-400 ease-luxury hover:bg-gold-400 disabled:opacity-70"
       >
         <KeyRound className="mr-1.5 size-4" strokeWidth={1.75} />
         {isSubmitting ? "変更しています…" : "パスワードを変更"}

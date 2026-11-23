@@ -83,7 +83,7 @@ export default function OralExamAnalysisPage() {
               </thead>
               <tbody>
                 {metrics.map((metric) => (
-                  <tr key={metric.label} className="border-t border-white/[0.05]">
+                  <tr key={metric.label} className="border-t border-border">
                     <td className="py-2 pr-4 text-slate-300">{metric.label}</td>
                     <td className="py-2 pr-4 tabular-nums text-ivory-100">{metric.format(average(struggling.map(metric.of)))}</td>
                     <td className="py-2 tabular-nums text-ivory-100">{metric.format(average(others.map(metric.of)))}</td>
@@ -110,7 +110,7 @@ export default function OralExamAnalysisPage() {
                 <div className="flex flex-wrap items-center gap-3 text-caption tabular-nums text-slate-400">
                   {live && <span>正答率 {pct(live.stats.accuracy)}</span>}
                   <span>全{total}回答</span>
-                  <span className="rounded-full border border-white/10 px-2 py-0.5">
+                  <span className="rounded-full border border-border px-2 py-0.5">
                     次の分析まで あと{Math.max(ANALYSIS_INTERVAL - sinceLast, 0)}回答
                   </span>
                   <ChevronRight className="size-4 text-gold-400" strokeWidth={1.75} />

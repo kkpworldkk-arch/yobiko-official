@@ -102,7 +102,7 @@ export default async function OralExamStudentProgressPage({
       {insight && (
         <section className="rounded-xl border border-gold-400/30 bg-card p-5 shadow-panel">
           <h2 className="text-caption font-medium tracking-[0.04em] text-gold-400/80">
-            AIによる要約・アドバイス
+            要約・アドバイス
           </h2>
           <p className="mt-2 whitespace-pre-line text-body-sm leading-relaxed text-ivory-200">
             {insight.summary}
@@ -147,10 +147,10 @@ export default async function OralExamStudentProgressPage({
 
       {handwriting.total > 0 && (
         <section className="rounded-xl border border-border bg-card p-6 shadow-panel">
-          <h2 className="text-h3 text-ivory-100">手書き回答のAI読み取り</h2>
+          <h2 className="text-h3 text-ivory-100">手書き回答の読み取り</h2>
           <p className="mt-1 text-body-sm text-slate-400">
             手書き {handwriting.total}件のうち、生徒が「読み間違い」として直したのは {handwriting.corrected}件
-            （{Math.round((handwriting.corrected / handwriting.total) * 100)}%）です。直された内容は、この生徒の次回以降の読み取りでAIの手がかりになります。
+            （{Math.round((handwriting.corrected / handwriting.total) * 100)}%）です。直された内容は、この生徒の次回以降の読み取りの手がかりになります。
           </p>
         </section>
       )}
@@ -162,7 +162,7 @@ export default async function OralExamStudentProgressPage({
             className={
               doneToday
                 ? "rounded-full border border-sage-500/25 bg-sage-500/[0.08] px-2.5 py-0.5 text-caption text-sage-500"
-                : "rounded-full border border-white/10 px-2.5 py-0.5 text-caption text-slate-400"
+                : "rounded-full border border-border px-2.5 py-0.5 text-caption text-slate-400"
             }
           >
             {doneToday ? "今日は実施済み" : "今日は未実施"}
@@ -215,7 +215,7 @@ export default async function OralExamStudentProgressPage({
                 </p>
               )}
               {attempt.transcriptionCorrected && attempt.aiTranscription && (
-                <p className="text-caption text-amber-300">AIの最初の読み取り: {attempt.aiTranscription}</p>
+                <p className="text-caption text-amber-300">最初の読み取り: {attempt.aiTranscription}</p>
               )}
               {attempt.answerImageDataUrl && (
                 <a
@@ -228,7 +228,7 @@ export default async function OralExamStudentProgressPage({
                   <img
                     src={attempt.answerImageDataUrl}
                     alt="手書き回答"
-                    className="mt-1 h-24 w-auto rounded-lg border border-white/10 bg-ivory-100"
+                    className="mt-1 h-24 w-auto rounded-lg border border-border bg-ivory-100"
                   />
                 </a>
               )}
@@ -251,13 +251,13 @@ export default async function OralExamStudentProgressPage({
               </div>
               {attempt.evaluation && (
                 <p className="mt-0.5 text-caption leading-relaxed text-slate-300">
-                  AI評価: {attempt.evaluation}
+                  評価: {attempt.evaluation}
                 </p>
               )}
               {(attempt.strengths.length > 0 || attempt.improvements.length > 0) && (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {attempt.strengths.length > 0 && (
-                    <div className="rounded-lg border border-white/[0.05] bg-navy-800/60 p-3">
+                    <div className="rounded-lg border border-border bg-navy-800/60 p-3">
                       <p className="text-eyebrow tracking-[0.04em] text-gold-400/80">
                         良かった点
                       </p>
@@ -271,7 +271,7 @@ export default async function OralExamStudentProgressPage({
                     </div>
                   )}
                   {attempt.improvements.length > 0 && (
-                    <div className="rounded-lg border border-white/[0.05] bg-navy-800/60 p-3">
+                    <div className="rounded-lg border border-border bg-navy-800/60 p-3">
                       <p className="text-eyebrow tracking-[0.04em] text-gold-400/80">
                         改善点
                       </p>

@@ -285,7 +285,7 @@ export default function OralExamBookDetailPage({
               />
             </div>
             <div className="flex gap-2">
-              <Button type="submit" disabled={savingBook} className="bg-gold-500 text-navy-950 hover:bg-gold-400">
+              <Button type="submit" disabled={savingBook} className="bg-gold-500 text-white hover:bg-gold-400">
                 {savingBook ? "保存しています…" : "保存する"}
               </Button>
               <Button type="button" variant="secondary" onClick={() => setEditingBook(false)}>
@@ -312,7 +312,7 @@ export default function OralExamBookDetailPage({
                 className={
                   assigned
                     ? "flex items-center gap-1.5 rounded-full border border-gold-500/40 bg-gold-500/[0.12] px-3 py-1.5 text-body-sm text-gold-400"
-                    : "flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-body-sm text-slate-400 transition-colors duration-300 hover:border-gold-500/30 hover:text-ivory-200"
+                    : "flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-body-sm text-slate-400 transition-colors duration-300 hover:border-gold-500/30 hover:text-ivory-200"
                 }
               >
                 {assigned && <Check className="size-3.5" strokeWidth={2} />}
@@ -343,7 +343,7 @@ export default function OralExamBookDetailPage({
           <Button
             type="submit"
             disabled={isImporting || !bulkText.trim()}
-            className="h-10 w-fit gap-1.5 bg-gold-500 px-4 text-navy-950 hover:bg-gold-400"
+            className="h-10 w-fit gap-1.5 bg-gold-500 px-4 text-white hover:bg-gold-400"
           >
             {isImporting ? <Loader2 className="size-4 animate-spin" /> : <ClipboardPaste className="size-4" />}
             まとめて登録する
@@ -439,7 +439,7 @@ export default function OralExamBookDetailPage({
                     <Button
                       type="button"
                       onClick={() => saveQuestionEdit(q.id)}
-                      className="h-8 bg-gold-500 px-3 text-caption text-navy-950 hover:bg-gold-400"
+                      className="h-8 bg-gold-500 px-3 text-caption text-white hover:bg-gold-400"
                     >
                       保存
                     </Button>

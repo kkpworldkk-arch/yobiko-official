@@ -6,8 +6,8 @@ import { ListChecks, Mic, MessagesSquare, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { label: "AIチューター", icon: MessagesSquare, href: "/student" },
-  { label: "AI口頭試問", icon: Mic, href: "/student/oral-exam" },
+  { label: "質問・解説", icon: MessagesSquare, href: "/student" },
+  { label: "口頭試問", icon: Mic, href: "/student/oral-exam" },
   { label: "デイリーテスト", icon: ListChecks, href: "/student/daily-test" },
   { label: "設定", icon: Settings, href: "/student/settings" },
 ];

@@ -1,4 +1,4 @@
-import { ChevronRight, MessagesSquare, Sparkles, UsersRound } from "lucide-react";
+import { ChevronRight, ClipboardCheck, MessagesSquare, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { StatTile } from "@/components/stat-tile";
 import { getTodayOralExamResults } from "@/lib/db";
@@ -61,7 +61,7 @@ export default function DashboardPage() {
         <StatTile
           label="講師確認待ち"
           value={`${totalPendingChecks}`}
-          icon={Sparkles}
+          icon={ClipboardCheck}
           emphasis={totalPendingChecks > 0}
         />
         <StatTile

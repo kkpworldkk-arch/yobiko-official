@@ -42,7 +42,7 @@ export default async function StudentLayout({
       <main className="mx-auto max-w-3xl px-6 py-10 sm:px-10">
         <FeedbackResolvedBanner notices={getFeedbackResolvedNoticesForUser(session.userId)} />
         <AnnouncementBanner
-          announcements={getUnreadAnnouncementsForUser(session.userId).map(({ id, title, body }) => ({
+          announcements={getUnreadAnnouncementsForUser(session.userId, session.role).map(({ id, title, body }) => ({
             id,
             title,
             body,

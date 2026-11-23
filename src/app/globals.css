@@ -7,48 +7,44 @@
 /* =====================================================================
  * 滝原塾 — Design System
  * ---------------------------------------------------------------------
- * Philosophy: Minimalist Luxury. 装飾ではなく、余白・質感・階調で
- * 「信頼」と「知性」を伝える。原色は使わず、Deep Navy × Slate ×
- * Champagne Gold の三色構成に絞る。
+ * Philosophy: 清潔感のある白と、ロゴの青。装飾ではなく、余白・罫線・
+ * 階調で「信頼」と「知性」を伝える。
  *
- * Palette usage rules:
- *  - navy-950/900  : ページ背景、サイドバーの最深部（水面下のような静けさ）
- *  - navy-800/700  : カード・パネルの地（背景よりわずかに明るい一段上の面）
- *  - navy-600/500  : ホバー面、入力欄、強めの罫線
- *  - slate-*       : 補助テキスト、非アクティブなアイコン
- *  - ivory-*       : 本文・見出しの文字色（純白は使わない = 温かみを残す）
- *  - gold-*        : CTA・アクティブ状態・重要指標のハイライトのみに限定使用
- *                    （多用すると安っぽくなるため、1画面の主張点は1〜2箇所まで）
- *  - sage / rust / crimson : 状態色。彩度を落とし、原色を避ける
- *                    （sage=良好・順調、rust=要観察、crimson=要対応のみ）
+ * 色名について：クラス名は以前の濃紺×金の構成のまま残している。
+ * 実際の色は次のとおり（白地に青のテーマ）。
+ *  - navy-*   : 面の色。900=ページ背景、700=カード、800/600/500=一段ずつ濃い面・罫線
+ *  - ivory-*  : 文字色（濃い紺）
+ *  - slate-*  : 補助テキスト
+ *  - gold-*   : ブランドの青（CTA・アクティブ状態・重要指標）
+ *  - sage / rust / crimson : 状態色（順調・要観察・要対応）
  * ===================================================================== */
 @theme {
   /* --- Raw palette -------------------------------------------------- */
-  --color-navy-950: #05070d;
-  --color-navy-900: #0a0e1a;
-  --color-navy-800: #0f1524;
-  --color-navy-700: #131b30;
-  --color-navy-600: #1a2440;
-  --color-navy-500: #263257;
-  --color-navy-400: #3c4a75;
+  --color-navy-950: #ffffff;
+  --color-navy-900: #f3f6fb;
+  --color-navy-800: #eaf0f8;
+  --color-navy-700: #ffffff;
+  --color-navy-600: #e1e9f4;
+  --color-navy-500: #c9d6e8;
+  --color-navy-400: #8fa6c6;
 
-  --color-slate-500: #626e88;
-  --color-slate-400: #7c88a3;
-  --color-slate-300: #9aa6bc;
-  --color-slate-200: #c2cadb;
+  --color-slate-500: #73819a;
+  --color-slate-400: #56657f;
+  --color-slate-300: #415069;
+  --color-slate-200: #2d3a52;
 
-  --color-ivory-300: #d8d3c6;
-  --color-ivory-200: #ede9df;
-  --color-ivory-100: #f6f4ee;
+  --color-ivory-300: #3a4a68;
+  --color-ivory-200: #1f2d4a;
+  --color-ivory-100: #12203b;
 
-  --color-gold-600: #a8853f;
-  --color-gold-500: #c4a05c;
-  --color-gold-400: #d9bd85;
-  --color-gold-300: #e8d4a8;
+  --color-gold-600: #174a80;
+  --color-gold-500: #2060a0;
+  --color-gold-400: #1b5590;
+  --color-gold-300: #3a7ac0;
 
-  --color-sage-500: #7fa087;
-  --color-rust-500: #be7355;
-  --color-crimson-500: #b25454;
+  --color-sage-500: #3f8a5c;
+  --color-rust-500: #c26a2e;
+  --color-crimson-500: #c0392b;
 
   /* --- Typography ----------------------------------------------------
    * 端末標準のフォント（iPhone・Mac はヒラギノ角ゴ、Windows は游ゴシック等）。
@@ -100,12 +96,12 @@
    * ------------------------------------------------------------------ */
   --ease-luxury: cubic-bezier(0.16, 1, 0.3, 1);
 
-  --shadow-panel: 0 1px 0 0 rgba(255, 255, 255, 0.04) inset,
-    0 20px 60px -24px rgba(0, 0, 0, 0.65);
-  --shadow-panel-lg: 0 1px 0 0 rgba(255, 255, 255, 0.05) inset,
-    0 40px 100px -32px rgba(0, 0, 0, 0.7);
-  --shadow-gold-glow: 0 0 0 1px rgba(196, 160, 92, 0.4),
-    0 8px 30px -8px rgba(196, 160, 92, 0.35);
+  --shadow-panel: 0 1px 2px 0 rgba(18, 32, 59, 0.06),
+    0 8px 24px -12px rgba(18, 32, 59, 0.14);
+  --shadow-panel-lg: 0 2px 4px 0 rgba(18, 32, 59, 0.06),
+    0 20px 50px -20px rgba(18, 32, 59, 0.2);
+  --shadow-gold-glow: 0 0 0 1px rgba(32, 96, 160, 0.25),
+    0 6px 18px -8px rgba(32, 96, 160, 0.4);
 }
 
 @theme inline {
@@ -153,8 +149,7 @@
 }
 
 /* ---------------------------------------------------------------------
- * Signature theme — 単一のブランド世界観として固定し、システムの
- * ライト/ダーク設定には依存させない（高級ブランドは配色を選ばせない）。
+ * Signature theme — 白地に青で固定し、システムのライト/ダーク設定には依存させない。
  * ------------------------------------------------------------------- */
 :root {
   --background: var(--color-navy-900);
@@ -164,7 +159,7 @@
   --popover: var(--color-navy-700);
   --popover-foreground: var(--color-ivory-100);
   --primary: var(--color-gold-500);
-  --primary-foreground: var(--color-navy-950);
+  --primary-foreground: #ffffff;
   --secondary: var(--color-navy-600);
   --secondary-foreground: var(--color-ivory-100);
   --muted: var(--color-navy-800);
@@ -172,7 +167,7 @@
   --accent: var(--color-navy-600);
   --accent-foreground: var(--color-gold-400);
   --destructive: var(--color-crimson-500);
-  --border: rgba(255, 255, 255, 0.08);
+  --border: rgba(18, 32, 59, 0.12);
   --input: var(--color-navy-600);
   --ring: var(--color-gold-500);
   --chart-1: var(--color-gold-500);
@@ -181,13 +176,13 @@
   --chart-4: var(--color-slate-300);
   --chart-5: var(--color-navy-400);
   --radius: 0.85rem;
-  --sidebar: var(--color-navy-950);
+  --sidebar: #ffffff;
   --sidebar-foreground: var(--color-ivory-200);
   --sidebar-primary: var(--color-gold-500);
-  --sidebar-primary-foreground: var(--color-navy-950);
+  --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: var(--color-navy-800);
   --sidebar-accent-foreground: var(--color-ivory-100);
-  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --sidebar-border: rgba(18, 32, 59, 0.1);
   --sidebar-ring: var(--color-gold-500);
 }
 
@@ -227,7 +222,7 @@
 /* ---------------------------------------------------------------------
  * Component rules（コンポーネントのルール）
  *  - パネル/カードは常に shadow-panel + border + bg-card を基本とする
- *  - ゴールドは「主要CTA」「アクティブなタブ/ナビ」「重要指標の数値」の
+ *  - ブランドの青は「主要CTA」「アクティブなタブ/ナビ」「重要指標の数値」の
  *    3用途にのみ使う。バッジや罫線での多用は禁止
  *  - ラベルは text-eyebrow + tracking-[0.04em] を必ず併用する
  *  - 生徒の状態色は sage(順調) / rust(要観察) / crimson(要対応) の

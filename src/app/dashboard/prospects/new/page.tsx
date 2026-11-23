@@ -384,7 +384,7 @@ export default function NewProspectPage() {
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="h-11 w-full gap-1.5 bg-gold-500 text-body font-medium text-navy-950 shadow-gold-glow transition-all duration-400 ease-luxury hover:bg-gold-400 disabled:opacity-60 sm:w-auto sm:self-end sm:px-6"
+          className="h-11 w-full gap-1.5 bg-gold-500 text-body font-medium text-white shadow-gold-glow transition-all duration-400 ease-luxury hover:bg-gold-400 disabled:opacity-60 sm:w-auto sm:self-end sm:px-6"
         >
           <Send className="size-4" />
           {isSubmitting ? "診断レポートを作成しています…" : "診断レポートを作成"}

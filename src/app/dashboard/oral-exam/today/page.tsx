@@ -59,7 +59,7 @@ export default function TodayOralExamPage() {
       <section>
         <h2 className="mb-3 text-h3 text-ivory-100">生徒別の結果</h2>
         {results.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-white/10 bg-card py-12 text-center text-body-sm text-slate-400">
+          <div className="rounded-xl border border-dashed border-border bg-card py-12 text-center text-body-sm text-slate-400">
             今日はまだ口頭試問に取り組んだ生徒がいません。
           </div>
         ) : (
@@ -110,7 +110,7 @@ export default function TodayOralExamPage() {
                       </summary>
                       <ul className="mt-2 flex flex-col gap-2">
                         {result.missed.map((item) => (
-                          <li key={item.id} className="rounded-lg border border-white/[0.05] bg-navy-800/60 p-3">
+                          <li key={item.id} className="rounded-lg border border-border bg-navy-800/60 p-3">
                             <p className="text-caption text-slate-500">{item.bookTitle}</p>
                             <p className="mt-0.5 text-body-sm text-ivory-200">{item.prompt}</p>
                             {item.answerText && (

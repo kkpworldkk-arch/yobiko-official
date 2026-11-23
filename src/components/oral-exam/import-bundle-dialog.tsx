@@ -52,7 +52,7 @@ export function ImportBundleDialog({ bookTitles }: { bookTitles: string[] }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 text-body-sm font-medium text-ivory-200 transition-colors duration-300 hover:bg-white/[0.08]">
+      <DialogTrigger className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-navy-800 px-3 text-body-sm font-medium text-ivory-200 transition-colors duration-300 hover:bg-navy-600">
         <Upload className="size-4" strokeWidth={2} />
         図つきデータの取り込み
       </DialogTrigger>
@@ -73,7 +73,7 @@ export function ImportBundleDialog({ bookTitles }: { bookTitles: string[] }) {
               id="bundle-book"
               name="book"
               defaultValue=""
-              className="h-9 rounded-lg border border-white/10 bg-navy-800 px-3 text-body-sm text-ivory-100"
+              className="h-9 rounded-lg border border-border bg-navy-800 px-3 text-body-sm text-ivory-100"
             >
               <option value="">指定しない（図の対応表を取り込むとき。黄チャート3冊もまとめて反映）</option>
               {bookTitles.map((title) => (
@@ -102,7 +102,7 @@ export function ImportBundleDialog({ bookTitles }: { bookTitles: string[] }) {
               name="mode"
               value="import"
               disabled={isSubmitting}
-              className="bg-gold-500 text-navy-950 hover:bg-gold-400"
+              className="bg-gold-500 text-white hover:bg-gold-400"
             >
               {isSubmitting ? "処理しています…" : "取り込む"}
             </Button>

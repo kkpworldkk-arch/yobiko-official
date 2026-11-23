@@ -46,7 +46,7 @@ export function MagnitudeBarList({
                 {unit}
               </span>
             </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-navy-600">
               <div
                 className={cn(
                   "h-full rounded-r-full transition-[width] duration-500 ease-luxury",

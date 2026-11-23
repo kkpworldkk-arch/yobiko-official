@@ -310,7 +310,7 @@ export function HandwritingPad({
         onPointerCancel={handlePointerEnd}
         onContextMenu={(e) => e.preventDefault()}
         className={cn(
-          "w-full touch-none select-none rounded-lg border border-white/10 [-webkit-touch-callout:none]",
+          "w-full touch-none select-none rounded-lg border border-border [-webkit-touch-callout:none]",
           expanded ? "min-h-0 flex-1" : "h-[min(60vh,480px)] min-h-72",
           tool === "eraser" ? "cursor-cell" : "cursor-crosshair",
         )}

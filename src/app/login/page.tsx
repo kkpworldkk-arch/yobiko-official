@@ -15,7 +15,7 @@ const initialState: LoginState = {};
 const subscribeNothing = () => () => {};
 
 export default function LoginPage() {
-  const [role, setRole] = useState<"teacher" | "family">("teacher");
+  const [role, setRole] = useState<"teacher" | "family" | "admin">("teacher");
   const [email, setEmail] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showForgotHint, setShowForgotHint] = useState(false);
@@ -38,7 +38,7 @@ export default function LoginPage() {
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(60% 50% at 50% 0%, rgba(196,160,92,0.10) 0%, rgba(196,160,92,0) 60%), radial-gradient(80% 60% at 50% 100%, rgba(38,50,87,0.35) 0%, rgba(5,7,13,0) 60%)",
+            "radial-gradient(60% 50% at 50% 0%, rgba(32,96,160,0.10) 0%, rgba(32,96,160,0) 60%), radial-gradient(80% 60% at 50% 100%, rgba(32,96,160,0.08) 0%, rgba(255,255,255,0) 60%)",
         }}
       />
       <div
@@ -46,7 +46,7 @@ export default function LoginPage() {
         className="pointer-events-none absolute inset-0 opacity-[0.03]"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)",
+            "linear-gradient(rgba(32,96,160,0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(32,96,160,0.10) 1px, transparent 1px)",
           backgroundSize: "64px 64px",
         }}
       />
@@ -79,14 +79,15 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div className="w-full rounded-2xl border border-white/[0.06] bg-card p-7 shadow-panel-lg">
+        <div className="w-full rounded-2xl border border-border bg-card p-7 shadow-panel-lg">
           <Tabs
             value={role}
             onValueChange={(value) => setRole(value as typeof role)}
           >
-            <TabsList className="mb-6 grid w-full grid-cols-2">
-              <TabsTrigger value="teacher">講師としてログイン</TabsTrigger>
+            <TabsList className="mb-6 grid w-full grid-cols-3">
+              <TabsTrigger value="teacher">講師</TabsTrigger>
               <TabsTrigger value="family">生徒・保護者</TabsTrigger>
+              <TabsTrigger value="admin">管理者</TabsTrigger>
             </TabsList>
           </Tabs>
 
@@ -142,7 +143,7 @@ export default function LoginPage() {
                 </button>
               </div>
               {showForgotHint && (
-                <p className="rounded-lg border border-white/[0.06] bg-navy-800/60 px-3.5 py-2.5 text-caption leading-relaxed text-slate-300">
+                <p className="rounded-lg border border-border bg-navy-800/60 px-3.5 py-2.5 text-caption leading-relaxed text-slate-300">
                   パスワードの再設定は講師が行います。担当講師、または
                   <Link href="/support" className="mx-0.5 text-gold-400 underline-offset-2 hover:underline">
                     お問い合わせ窓口
@@ -181,7 +182,7 @@ export default function LoginPage() {
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="mt-2 h-11 w-full bg-gold-500 text-body font-medium text-navy-950 shadow-gold-glow transition-all duration-400 ease-luxury hover:bg-gold-400 disabled:opacity-70"
+              className="mt-2 h-11 w-full bg-gold-500 text-body font-medium text-white shadow-gold-glow transition-all duration-400 ease-luxury hover:bg-gold-400 disabled:opacity-70"
             >
               {isSubmitting ? "確認しています…" : "ログイン"}
             </Button>

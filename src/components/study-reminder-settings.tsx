@@ -111,7 +111,7 @@ export function StudyReminderSettings() {
               className={
                 active
                   ? "rounded-lg border border-gold-500/50 bg-gold-500/15 px-3 py-1.5 text-body-sm text-gold-400"
-                  : "rounded-lg border border-white/[0.08] px-3 py-1.5 text-body-sm text-slate-300 hover:border-white/20"
+                  : "rounded-lg border border-border px-3 py-1.5 text-body-sm text-slate-300 hover:border-border"
               }
             >
               {time}

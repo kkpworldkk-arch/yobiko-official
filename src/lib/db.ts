@@ -772,7 +772,7 @@ export function insertProspectAssessment(
   return record;
 }
 
-export type UserRole = "teacher" | "family";
+export type UserRole = "teacher" | "family" | "admin";
 
 export interface UserRecord {
   id: string;
@@ -2099,8 +2099,14 @@ db.exec(`
   )
 `);
 
+// お知らせの宛先。student=生徒・保護者、teacher=講師、all=全員。管理者が出すものは teacher / all も選べる。
+export type AnnouncementAudience = "student" | "teacher" | "all";
+
+ensureColumn("announcements", "audience", "audience TEXT NOT NULL DEFAULT 'student'");
+
 export interface Announcement {
   id: string;
+  audience: AnnouncementAudience;
   title: string;
   body: string;
   bookId: string | null;
@@ -2112,6 +2118,7 @@ export interface Announcement {
 
 interface AnnouncementRow {
   id: string;
+  audience: string;
   title: string;
   body: string;
   book_id: string | null;
@@ -2124,6 +2131,7 @@ interface AnnouncementRow {
 function announcementRowToRecord(row: AnnouncementRow): Announcement {
   return {
     id: row.id,
+    audience: (row.audience as AnnouncementAudience) ?? "student",
     title: row.title,
     body: row.body,
     bookId: row.book_id,
@@ -2138,36 +2146,43 @@ export function insertAnnouncement(input: {
   title: string;
   body: string;
   bookId: string | null;
+  audience?: AnnouncementAudience;
 }): void {
   db.prepare(
-    "INSERT INTO announcements (id, title, body, book_id, created_at, active) VALUES (?, ?, ?, ?, ?, 1)",
-  ).run(randomUUID(), input.title, input.body, input.bookId, new Date().toISOString());
+    "INSERT INTO announcements (id, title, body, book_id, created_at, active, audience) VALUES (?, ?, ?, ?, ?, 1, ?)",
+  ).run(randomUUID(), input.title, input.body, input.bookId, new Date().toISOString(), input.audience ?? "student");
 }
 
 export function setAnnouncementActive(id: string, active: boolean): void {
   db.prepare("UPDATE announcements SET active = ? WHERE id = ?").run(active ? 1 : 0, id);
 }
 
-export function getAllAnnouncements(): Announcement[] {
+// audiences を渡すと、その宛先のお知らせだけを返す（講師画面は生徒向け、管理者画面は全部）。
+export function getAllAnnouncements(audiences?: AnnouncementAudience[]): Announcement[] {
+  const filter = audiences && audiences.length > 0 ? `WHERE a.audience IN (${audiences.map(() => "?").join(",")})` : "";
   const rows = db
     .prepare(
       `SELECT a.*, b.title AS book_title,
               (SELECT COUNT(*) FROM announcement_reads r WHERE r.announcement_id = a.id) AS read_count
        FROM announcements a LEFT JOIN oral_exam_books b ON b.id = a.book_id
+       ${filter}
        ORDER BY a.created_at DESC`,
     )
-    .all() as unknown as AnnouncementRow[];
+    .all(...(audiences ?? [])) as unknown as AnnouncementRow[];
   return rows.map(announcementRowToRecord);
 }
 
 // そのアカウントがまだ確認していない、公開中のお知らせ（古い順）。
-export function getUnreadAnnouncementsForUser(userId: string): Announcement[] {
+export function getUnreadAnnouncementsForUser(userId: string, role: UserRole = "family"): Announcement[] {
+  if (role === "admin") return [];
   const studentId = getStudentIdForUser(userId);
+  const audience = role === "teacher" ? "teacher" : "student";
   const rows = db
     .prepare(
       `SELECT a.*, NULL AS book_title, 0 AS read_count
        FROM announcements a
        WHERE a.active = 1
+         AND a.audience IN (?, 'all')
          AND NOT EXISTS (
            SELECT 1 FROM announcement_reads r WHERE r.announcement_id = a.id AND r.user_id = ?
          )
@@ -2179,7 +2194,7 @@ export function getUnreadAnnouncementsForUser(userId: string): Announcement[] {
          )
        ORDER BY a.created_at ASC`,
     )
-    .all(userId, studentId ?? "") as unknown as AnnouncementRow[];
+    .all(audience, userId, studentId ?? "") as unknown as AnnouncementRow[];
   return rows.map(announcementRowToRecord);
 }
 

@@ -88,15 +88,15 @@ export default function DashboardOralExamPage() {
             </p>
           </div>
           <div className="grid min-w-0 grid-cols-3 gap-3 lg:min-w-[310px]">
-            <div className="border-l border-white/10 pl-3">
+            <div className="border-l border-border pl-3">
               <p className="text-caption text-slate-500">資料冊数</p>
               <p className="mt-1 text-h2 tabular-nums text-ivory-100">{catalogBooks.length}</p>
             </div>
-            <div className="border-l border-white/10 pl-3">
+            <div className="border-l border-border pl-3">
               <p className="text-caption text-slate-500">問題登録</p>
               <p className="mt-1 text-h2 tabular-nums text-ivory-100">{catalogQuestionCount}</p>
             </div>
-            <div className="border-l border-white/10 pl-3">
+            <div className="border-l border-border pl-3">
               <p className="text-caption text-slate-500">問題化待ち</p>
               <p className="mt-1 text-h2 tabular-nums text-gold-400">{catalogBooks.length}</p>
             </div>
@@ -107,7 +107,7 @@ export default function DashboardOralExamPage() {
       <section>
         <h2 className="mb-3 text-h3 text-ivory-100">参考書一覧</h2>
         {books.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-white/10 bg-card py-10 text-center">
+          <div className="rounded-xl border border-dashed border-border bg-card py-10 text-center">
             <p className="text-body-sm text-slate-400">
               まだ参考書がありません。「参考書を追加」から登録してください。
             </p>
@@ -170,7 +170,7 @@ export default function DashboardOralExamPage() {
                   className={
                     dailyDoneToday
                       ? "rounded-full border border-sage-500/25 bg-sage-500/[0.08] px-2 py-0.5 text-sage-500"
-                      : "rounded-full border border-white/10 px-2 py-0.5 text-slate-500"
+                      : "rounded-full border border-border px-2 py-0.5 text-slate-500"
                   }
                 >
                   デイリーテスト {dailyDoneToday ? "実施済" : "未実施"}

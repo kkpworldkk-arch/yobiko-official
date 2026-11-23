@@ -12,11 +12,13 @@ export interface LoginState {
 const ROLE_HOME: Record<UserRole, string> = {
   teacher: "/dashboard",
   family: "/student",
+  admin: "/admin",
 };
 
 const ROLE_LABEL: Record<UserRole, string> = {
   teacher: "講師としてログイン",
   family: "生徒・保護者",
+  admin: "管理者としてログイン",
 };
 
 // メールアドレス単位でのブルートフォース対策。単一プロセスで動くこのアプリの範囲では

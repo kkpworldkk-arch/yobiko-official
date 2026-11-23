@@ -54,7 +54,7 @@ export default function AnalysisPage() {
           {demoStudent.name}様の弱点内訳
         </h2>
         <p className="mt-1 mb-5 text-body-sm text-slate-400">
-          実際にAIチューターへ送った質問から自動集計しています。
+          実際に「質問・解説」へ送られた質問から自動集計しています。
         </p>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div>
