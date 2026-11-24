@@ -47,6 +47,13 @@ export const REFERENCE_BOOK_CATALOG: ReferenceBookCatalogEntry[] = [
     description: "sankosho/生物　基礎問題精講.pdf（336ページ）。参考書の問題番号・小問番号・紙面の解答をそのまま反映する口頭試問用教材。",
   },
   {
+    fileName: "数学1･A基礎問題精講 .pdf",
+    title: "数学1・A 基礎問題精講",
+    subject: "数学・数学1+A",
+    pageCount: 304,
+    description: "sankosho/数学1･A基礎問題精講 .pdf（304ページ）。全154テーマの基礎問と演習問題（答えは巻末）を、参考書の問題番号・小問番号どおりに反映する口頭試問用教材。",
+  },
+  {
     fileName: "黄チャート式 解法と演習 数学1+A .pdf",
     title: "黄チャート式 解法と演習 数学1+A",
     subject: "数学・数学1+A",
