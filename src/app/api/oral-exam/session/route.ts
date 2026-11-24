@@ -1,111 +1,20 @@
-import { after, NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import {
   createOralExamSession,
   ensureOralExamSeeded,
   getOralExamBooks,
   getOralExamReviewPool,
   isBookAssignedToStudent,
-  markQuestionReviewed,
 } from "@/lib/db";
 import { questionKind } from "@/lib/oral-exam-mastery";
-import { reviewOralExamQuestion } from "@/lib/oral-exam-review";
 import { getSession } from "@/lib/session";
 import { resolveStudentIdentity } from "@/lib/student-identity";
-import type { OralExamQueueItem } from "@/lib/types";
-import type { OralExamQuestionFilters } from "@/lib/db";
-
-const QUEUE_SIZE = 10;
-const REVIEW_POOL_SIZE = 25;
-// 点検不要の問題がこれだけ揃っていれば、AI点検の完了を待たずにすぐ出題を始める
-const MIN_READY_TO_START = 3;
+import type { OralExamQuestionFilters, OralExamQuestionOrder } from "@/lib/db";
 
 interface SessionRequestBody {
   bookId?: string;
   filters?: OralExamQuestionFilters;
-}
-
-function needsQuestionReview(item: OralExamQueueItem): boolean {
-  const { question } = item;
-  if (question.reviewedAt) return false;
-
-  const prompt = question.prompt.trim();
-  const answer = question.modelAnswer.trim();
-  const combined = `${prompt}\n${answer}`;
-
-  // 明らかなOCR崩れや、答えとして成立しない候補だけをClaude点検へ回す。
-  if (
-    !prompt ||
-    !answer ||
-    prompt.length < 12 ||
-    answer.length > 500 ||
-    /�|[\uE000-\uF8FF]/.test(combined) ||
-    /記載なし|確認できない|出題不可|判断できない|不明です/.test(combined) ||
-    prompt === answer ||
-    !/[ぁ-んァ-ン一-龥A-Za-z]/.test(prompt)
-  ) {
-    return true;
-  }
-
-  return /(?:[IlO0]{3,}|[|｜]{2,}|[.,。]{3,}|\s{5,})/.test(combined);
-}
-
-async function buildQueue(pool: OralExamQueueItem[]): Promise<OralExamQueueItem[]> {
-  const accepted: OralExamQueueItem[] = [];
-  const candidates = pool.filter((item) => !needsQuestionReview(item));
-  const suspicious = pool.filter((item) => needsQuestionReview(item)).slice(0, QUEUE_SIZE);
-
-  accepted.push(...candidates.slice(0, QUEUE_SIZE));
-  // 怪しい問題のAI点検は数秒かかる。すぐ出せる問題が十分あるときは待たせずに返し、
-  // 点検はレスポンス後に裏で済ませて次回以降の出題に反映する。
-  if (accepted.length >= MIN_READY_TO_START) {
-    if (suspicious.length > 0) {
-      after(() => reviewItems(suspicious).catch((error) => {
-        console.error("Background question review failed:", error);
-      }));
-    }
-    return accepted;
-  }
-
-  const reviewed = await reviewItems(suspicious);
-  accepted.push(...reviewed.filter((item): item is OralExamQueueItem => item !== null));
-  return accepted.slice(0, QUEUE_SIZE);
-}
-
-async function reviewItems(items: OralExamQueueItem[]): Promise<(OralExamQueueItem | null)[]> {
-  return Promise.all(
-    items.map(async (item) => {
-      const question = item.question;
-      const result = await reviewOralExamQuestion({
-        category: question.category,
-        prompt: question.prompt,
-        modelAnswer: question.modelAnswer,
-      });
-
-      if (result.status === "blocked") {
-        markQuestionReviewed(question.id, { blocked: true });
-        return null;
-      }
-      if (result.status === "fixed") {
-        markQuestionReviewed(question.id, {
-          blocked: false,
-          prompt: result.prompt,
-          modelAnswer: result.modelAnswer,
-        });
-        return {
-          ...item,
-          question: { ...question, prompt: result.prompt, modelAnswer: result.modelAnswer },
-        };
-      }
-      if (result.status === "ok") {
-        markQuestionReviewed(question.id, {
-          blocked: false,
-          prompt: question.prompt,
-          modelAnswer: question.modelAnswer,
-        });
-      }
-      return item;
-    }),
-  );
+  order?: OralExamQuestionOrder;
 }
 
 export const dynamic = "force-dynamic";
@@ -153,14 +62,14 @@ export async function POST(request: NextRequest) {
   }
 
   const filters = normalizeFilters(body?.filters);
-  const pool = getOralExamReviewPool(studentId, bookId, REVIEW_POOL_SIZE, filters);
+  const order: OralExamQuestionOrder = body?.order === "sequential" ? "sequential" : "random";
+  const pool = getOralExamReviewPool(studentId, bookId, Number.MAX_SAFE_INTEGER, filters, order);
   if (pool.length === 0) {
     return NextResponse.json({ error: "指定した条件に一致する問題がありません" }, { status: 404 });
   }
 
   const examSession = createOralExamSession(studentId, bookId);
-  const reviewedItems = await buildQueue(pool);
-  const queue = reviewedItems.map((item) => ({
+  const queue = pool.map((item) => ({
     id: item.question.id,
     problemNumber: item.question.problemNumber,
     subLabel: item.question.subLabel,

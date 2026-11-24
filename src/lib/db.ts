@@ -1413,7 +1413,11 @@ export function upsertMastery(mastery: OralExamMastery): void {
   );
 }
 
-function shuffledQueueItems(studentId: string, bookId: string): OralExamQueueItem[] {
+function shuffledQueueItems(
+  studentId: string,
+  bookId: string,
+  order: OralExamQuestionOrder = "random",
+): OralExamQueueItem[] {
   const questions = getOralExamQuestions(bookId).filter((q) => !q.blocked);
   const masteryRows = getMasteryForBook(studentId, bookId);
   const masteryByQuestion = new Map(masteryRows.map((m) => [m.questionId, m]));
@@ -1424,7 +1428,10 @@ function shuffledQueueItems(studentId: string, bookId: string): OralExamQueueIte
   }));
 
   // 生徒が教材を自由に選ぶ運用では、毎回同じ問題を固定順で出さず、
-  // 習熟度情報を添えた全問題からランダムに選ぶ。
+  // 習熟度情報を添えた全問題からランダムに選ぶ。順番通り指定のときは登録順のまま返す。
+  if (order === "sequential") {
+    return items.sort((a, b) => a.question.orderIndex - b.question.orderIndex);
+  }
   for (let index = items.length - 1; index > 0; index -= 1) {
     const randomIndex = Math.floor(Math.random() * (index + 1));
     [items[index], items[randomIndex]] = [items[randomIndex], items[index]];
@@ -1448,10 +1455,13 @@ export function getOralExamReviewPool(
   bookId: string,
   poolSize: number,
   filters: OralExamQuestionFilters = {},
+  order: OralExamQuestionOrder = "random",
 ): OralExamQueueItem[] {
-  const items = shuffledQueueItems(studentId, bookId).filter((item) => matchesOralExamFilters(item, filters));
+  const items = shuffledQueueItems(studentId, bookId, order).filter((item) => matchesOralExamFilters(item, filters));
   return items.slice(0, poolSize);
 }
+
+export type OralExamQuestionOrder = "random" | "sequential";
 
 export interface OralExamQuestionFilters {
   pageStart?: number;
@@ -1489,21 +1499,12 @@ function matchesOralExamFilters(item: OralExamQueueItem, filters: OralExamQuesti
   return true;
 }
 
-export function markQuestionReviewed(
-  id: string,
-  input: { blocked: true } | { blocked: false; prompt: string; modelAnswer: string },
-): void {
-  const reviewedAt = new Date().toISOString();
-  if (input.blocked) {
-    db.prepare("UPDATE oral_exam_questions SET reviewed_at = ?, blocked = 1 WHERE id = ?").run(
-      reviewedAt,
-      id,
-    );
-  } else {
-    db.prepare(
-      "UPDATE oral_exam_questions SET reviewed_at = ?, blocked = 0, prompt = ?, model_answer = ? WHERE id = ?",
-    ).run(reviewedAt, input.prompt, input.modelAnswer, id);
-  }
+// 出題対象から外す（生徒の「問題がおかしい」報告用）。
+export function markQuestionReviewed(id: string, input: { blocked: true }): void {
+  db.prepare("UPDATE oral_exam_questions SET reviewed_at = ?, blocked = 1 WHERE id = ?").run(
+    new Date().toISOString(),
+    id,
+  );
 }
 
 interface OralExamSessionRow {

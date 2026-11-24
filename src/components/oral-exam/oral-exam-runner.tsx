@@ -215,6 +215,7 @@ export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
   const [books, setBooks] = useState<OralExamBook[]>([]);
   const [selectedBookId, setSelectedBookId] = useState<string>("");
   const [filterOptions, setFilterOptions] = useState<Record<string, OralExamFilterOptions>>({});
+  const [questionOrder, setQuestionOrder] = useState<"random" | "sequential">("random");
   const [filters, setFilters] = useState({
     pageStart: "",
     pageEnd: "",
@@ -506,6 +507,7 @@ export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           bookId: selectedBookId,
+          order: questionOrder,
           filters: {
             pageStart: filters.pageStart ? Number(filters.pageStart) : undefined,
             pageEnd: filters.pageEnd ? Number(filters.pageEnd) : undefined,
@@ -868,6 +870,21 @@ export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
                   onChange={(questionStart, questionEnd) => setFilters((current) => ({ ...current, questionStart, questionEnd }))}
                 />
               )}
+            </div>
+            <div className="mt-4 flex flex-col gap-1.5">
+              <span className="text-caption text-slate-400">出題順</span>
+              <div className="flex gap-2">
+                {([["sequential", "順番通り"], ["random", "ランダム"]] as const).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setQuestionOrder(value)}
+                    className={`h-9 rounded-md border px-4 text-body-sm ${questionOrder === value ? "border-gold-500 bg-gold-500/10 text-gold-400" : "border-border text-slate-400"}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
