@@ -54,6 +54,20 @@ export const REFERENCE_BOOK_CATALOG: ReferenceBookCatalogEntry[] = [
     description: "sankosho/数学1･A基礎問題精講 .pdf（304ページ）。全154テーマの基礎問と演習問題（答えは巻末）を、参考書の問題番号・小問番号どおりに反映する口頭試問用教材。",
   },
   {
+    fileName: "642122979429843151_短期集中ゼミ 基礎からの数学Ⅰ+A Express.docx",
+    title: "短期集中ゼミ 基礎からの数学Ⅰ+A Express",
+    subject: "数学・数学1+A",
+    pageCount: 86,
+    description: "sankosho の Word「短期集中ゼミ 基礎からの数学Ⅰ+A Express」（全86題・問題と最終結果）。問題番号・小問番号どおりに反映する口頭試問用教材。",
+  },
+  {
+    fileName: "642122992297967686_短期集中ゼミ 基礎からの数学Ⅱ+B+C Expressdocx.docx",
+    title: "短期集中ゼミ 基礎からの数学Ⅱ+B+C Express",
+    subject: "数学・数学2+B+C",
+    pageCount: 135,
+    description: "sankosho の Word「短期集中ゼミ 基礎からの数学Ⅱ+B+C Express」（全135題・問題と最終結果）。問題番号・小問番号どおりに反映する口頭試問用教材。",
+  },
+  {
     fileName: "黄チャート式 解法と演習 数学1+A .pdf",
     title: "黄チャート式 解法と演習 数学1+A",
     subject: "数学・数学1+A",
