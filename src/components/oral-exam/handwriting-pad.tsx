@@ -28,6 +28,13 @@ const INK = "#10141f";
 const EXPORT_MAX_SIDE = 1568;
 const EXPORT_PADDING = 24;
 
+// 一度でもペンが使われたら、以降の問題でも指・手のひらを無視する。
+// 回答欄は問題ごとに作り直されるため、コンポーネントの外で覚えておく。
+let penSeen = false;
+function rememberPen() {
+  penSeen = true;
+}
+
 export function HandwritingPad({
   ref,
   prompt,
@@ -44,9 +51,9 @@ export function HandwritingPad({
   const strokesRef = useRef<Stroke[]>([]);
   const historyRef = useRef<Stroke[][]>([]);
   const activePointerRef = useRef<number | null>(null);
+  const activePointerTypeRef = useRef("");
   const activeStrokeRef = useRef<Stroke | null>(null);
   const erasingRef = useRef(false);
-  const penSeenRef = useRef(false);
   const viewScaleRef = useRef(1);
 
   const [tool, setTool] = useState<Tool>("pen");
@@ -109,6 +116,20 @@ export function HandwritingPad({
     resize();
     return () => observer.disconnect();
   }, [computeViewScale, redraw]);
+
+  // iPad の「スクリブル」は、ペンで素早く続けて書くと一部の線を横取りすることがある。
+  // タッチの標準動作を止めると防げる。React の onTouchMove では止められないため直接登録する。
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const block = (e: TouchEvent) => e.preventDefault();
+    canvas.addEventListener("touchstart", block, { passive: false });
+    canvas.addEventListener("touchmove", block, { passive: false });
+    return () => {
+      canvas.removeEventListener("touchstart", block);
+      canvas.removeEventListener("touchmove", block);
+    };
+  }, []);
 
   // 全画面中は後ろのページがスクロールしないようにする。
   useEffect(() => {
@@ -174,14 +195,30 @@ export function HandwritingPad({
   }
 
   function handlePointerDown(e: React.PointerEvent<HTMLCanvasElement>) {
-    if (e.pointerType === "pen") penSeenRef.current = true;
+    if (e.pointerType === "pen") rememberPen();
     // ペンを使っている間は、画面に触れた手のひら・指を線として扱わない。
-    if (e.pointerType === "touch" && penSeenRef.current) return;
-    if (activePointerRef.current !== null) return;
+    if (e.pointerType === "touch" && penSeen) return;
+    if (activePointerRef.current !== null) {
+      // 2本目の指と、ペンで書いている最中の別の入力は無視する。
+      if (e.pointerType === "touch" && !e.isPrimary) return;
+      if (e.pointerType !== "pen" && activePointerTypeRef.current === "pen") return;
+      // 先に触れていた手のひらより、ペンを優先する。
+      if (e.pointerType === "pen" && activePointerTypeRef.current === "touch") {
+        discardActiveInput();
+      } else {
+        // 前の入力の「離した」合図が届いていないので、ここで終わらせて書けない状態を防ぐ。
+        finishActiveInput();
+      }
+    }
     e.preventDefault();
     onFirstInput?.();
     activePointerRef.current = e.pointerId;
-    e.currentTarget.setPointerCapture(e.pointerId);
+    activePointerTypeRef.current = e.pointerType;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // 取得できなくても、枠内で書くぶんには問題ない。
+    }
 
     const point = toWorld(e);
     // ペンの消しゴム側（対応ペンのみ）でこすった場合も消しゴムとして扱う。
@@ -224,10 +261,25 @@ export function HandwritingPad({
 
   function handlePointerEnd(e: React.PointerEvent<HTMLCanvasElement>) {
     if (e.pointerId !== activePointerRef.current) return;
-    activePointerRef.current = null;
+    finishActiveInput();
     if (e.currentTarget.hasPointerCapture(e.pointerId)) {
       e.currentTarget.releasePointerCapture(e.pointerId);
     }
+  }
+
+  // 書きかけの線（または消しゴム操作）を取り消して、触れる前の状態に戻す。
+  function discardActiveInput() {
+    const previous = historyRef.current.pop();
+    if (previous) strokesRef.current = previous;
+    activePointerRef.current = null;
+    activeStrokeRef.current = null;
+    erasingRef.current = false;
+    redraw();
+    syncState();
+  }
+
+  function finishActiveInput() {
+    activePointerRef.current = null;
     if (erasingRef.current) {
       erasingRef.current = false;
       // 何も消えなかったときは、元に戻す履歴を残さない。
@@ -308,6 +360,7 @@ export function HandwritingPad({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerEnd}
         onPointerCancel={handlePointerEnd}
+        onLostPointerCapture={handlePointerEnd}
         onContextMenu={(e) => e.preventDefault()}
         className={cn(
           "w-full touch-none select-none rounded-lg border border-border [-webkit-touch-callout:none]",

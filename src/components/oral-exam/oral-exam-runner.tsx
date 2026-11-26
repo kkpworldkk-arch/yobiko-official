@@ -373,6 +373,8 @@ export function OralExamRunner({ mode }: { mode: "books" | "daily" }) {
     setFlagDone(false);
     if (isRecording) stopRecording();
     handwritingRef.current?.clear();
+    // 回答欄が表示されていないときは clear() が届かないので、ここでも戻す。
+    setHasDrawing(false);
   }
 
   // AIが読み間違えた手書きの文字を直し、直した内容で採点し直す
